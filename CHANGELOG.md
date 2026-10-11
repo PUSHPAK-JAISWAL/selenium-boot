@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-### Unreleased
+### v3.8.0 — 2026-10-11
+
+- **`Locator.first()` and `Locator.last()`** — narrow matches to the first or last matching element (e.g. `getByRole(Role.LISTITEM).first()`). Both resolve at action time, re-evaluating candidate elements on every poll and retrying stale/not-yet-present elements up to `timeouts.explicit`. (#132)
 
 - **`Locator` form actions: `clear()`, `check()`, `uncheck()`, `isChecked()`, `selectOption(text)`, `selectOptionByValue(value)`, `inputValue()`** — form controls can now be manipulated and inspected directly on `Locator` without falling back to `BasePage` helpers or raw `WebElement`s. `check()` and `uncheck()` are idempotent (no click if already in the target state), `isChecked()` queries checked state without waiting, and terminal actions (`clear`, `check`, `uncheck`, `selectOption`, `selectOptionByValue`, `inputValue`) auto-wait, re-resolving from scratch on every poll to survive stale or late-appearing elements. (#133)
 
