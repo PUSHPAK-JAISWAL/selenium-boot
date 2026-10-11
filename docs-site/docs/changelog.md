@@ -9,6 +9,10 @@ sidebar_position: 99
 
 All notable changes to Selenium Boot are documented here.
 
+## [Unreleased]
+
+- **`Locator` form actions: `clear()`, `check()`, `uncheck()`, `isChecked()`, `selectOption(text)`, `selectOptionByValue(value)`, `inputValue()`** — form controls can now be manipulated and inspected directly on `Locator` without falling back to `BasePage` helpers or raw `WebElement`s. `check()` and `uncheck()` are idempotent (no click if already in the target state), `isChecked()` queries checked state without waiting, and terminal actions (`clear`, `check`, `uncheck`, `selectOption`, `selectOptionByValue`, `inputValue`) auto-wait, re-resolving from scratch on every poll to survive stale or late-appearing elements. (#133)
+
 ---
 
 ## [3.7.0] — 2026-10-04

@@ -11,6 +11,7 @@ import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
@@ -260,6 +261,38 @@ public final class Locator {
         whenReady(el -> el.isDisplayed() && el.isEnabled(), el -> { el.click(); return null; });
     }
 
+    /**
+     * Waits for the element to be visible and enabled, then checks it if it is not already checked.
+     *
+     * <p>Idempotent: does not click if the element is already checked. Works on checkboxes,
+     * radio buttons, and elements with {@code role="checkbox"}. Re-resolves on every poll
+     * and retries stale or not-yet-present elements until {@code timeouts.explicit} elapses.
+     */
+    public void check() {
+        whenReady(el -> el.isDisplayed() && el.isEnabled(), el -> {
+            if (!isSelected(el)) {
+                el.click();
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Waits for the element to be visible and enabled, then unchecks it if it is currently checked.
+     *
+     * <p>Idempotent: does not click if the element is already unchecked. Works on checkboxes
+     * and elements with {@code role="checkbox"}. Re-resolves on every poll and retries stale
+     * or not-yet-present elements until {@code timeouts.explicit} elapses.
+     */
+    public void uncheck() {
+        whenReady(el -> el.isDisplayed() && el.isEnabled(), el -> {
+            if (isSelected(el)) {
+                el.click();
+            }
+            return null;
+        });
+    }
+
     /** Waits for the element to be visible, clears it, then types the given text. */
     public void type(String text) {
         whenVisible(el -> {
@@ -274,6 +307,19 @@ public final class Locator {
         whenVisible(el -> { el.sendKeys(text); return null; });
     }
 
+    /**
+     * Waits for the element to be visible and clears its text or value.
+     *
+     * <p>Re-resolves on every poll and retries stale or not-yet-present elements
+     * until {@code timeouts.explicit} elapses.
+     */
+    public void clear() {
+        whenVisible(el -> {
+            el.clear();
+            return null;
+        });
+    }
+
     /** Waits for the element to be visible and returns its trimmed visible text. */
     public String getText() {
         return whenVisible(el -> el.getText().trim());
@@ -282,6 +328,25 @@ public final class Locator {
     /** Returns the value of the given attribute, waiting for visibility first. */
     public String getAttribute(String name) {
         return whenVisible(el -> el.getAttribute(name));
+    }
+
+    /**
+     * Waits for the element to be visible and returns the current value of an {@code <input>},
+     * {@code <textarea>}, or other form control.
+     *
+     * <p>Retrieves the element's DOM {@code value} property, falling back to the {@code value}
+     * attribute. Returns an empty string if no value is present.
+     *
+     * @return the input's current value, or {@code ""} if none
+     */
+    public String inputValue() {
+        return whenVisible(el -> {
+            String val = el.getDomProperty("value");
+            if (val == null) {
+                val = el.getAttribute("value");
+            }
+            return val != null ? val : "";
+        });
     }
 
     /** Returns true if the element is present and displayed — does NOT wait. */
@@ -302,6 +367,18 @@ public final class Locator {
     public boolean isEnabled() {
         try {
             return resolve().isEnabled();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Returns true if the element (checkbox, radio button, or ARIA checkable control)
+     * is present and checked — does NOT wait.
+     */
+    public boolean isChecked() {
+        try {
+            return isSelected(resolve());
         } catch (Exception e) {
             return false;
         }
@@ -354,6 +431,36 @@ public final class Locator {
             }
             return null;
         }));
+    }
+
+    /**
+     * Selects an option in a {@code <select>} element by its visible text.
+     *
+     * <p>Waits for the element to be visible, and re-resolves from scratch on every poll
+     * until {@code timeouts.explicit} elapses.
+     *
+     * @param text visible text of the option to select
+     */
+    public void selectOption(String text) {
+        whenVisible(el -> {
+            new Select(el).selectByVisibleText(text);
+            return null;
+        });
+    }
+
+    /**
+     * Selects an option in a {@code <select>} element by its {@code value} attribute.
+     *
+     * <p>Waits for the element to be visible, and re-resolves from scratch on every poll
+     * until {@code timeouts.explicit} elapses.
+     *
+     * @param value value attribute of the option to select
+     */
+    public void selectOptionByValue(String value) {
+        whenVisible(el -> {
+            new Select(el).selectByValue(value);
+            return null;
+        });
     }
 
     /** Returns the number of elements currently matching the locator chain (no wait). */
@@ -769,6 +876,10 @@ public final class Locator {
     // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
+
+    private static boolean isSelected(WebElement el) {
+        return el.isSelected() || "true".equalsIgnoreCase(el.getAttribute("aria-checked"));
+    }
 
     private WebDriver driver() {
         return DriverManager.getDriver();

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Unreleased
 
+- **`Locator` form actions: `clear()`, `check()`, `uncheck()`, `isChecked()`, `selectOption(text)`, `selectOptionByValue(value)`, `inputValue()`** — form controls can now be manipulated and inspected directly on `Locator` without falling back to `BasePage` helpers or raw `WebElement`s. `check()` and `uncheck()` are idempotent (no click if already in the target state), `isChecked()` queries checked state without waiting, and terminal actions (`clear`, `check`, `uncheck`, `selectOption`, `selectOptionByValue`, `inputValue`) auto-wait, re-resolving from scratch on every poll to survive stale or late-appearing elements. (#133)
+
 - **HTML report: the "Avg Time (ms)" stat tile is now "Suite Time"** — the wall-clock suite duration in `hh:mm:ss`, matching the sidebar.
 
 - **HTML report: suite duration in `hh:mm:ss`, wall-clock.** The report previously showed the *sum* of every test's time in milliseconds, which overstates a parallel run. It now shows how long the suite actually ran (`01:42:07`; hours aren't capped). The metrics JSON gains `suiteDurationMs`; `totalTimeMs` (summed test time) is unchanged.

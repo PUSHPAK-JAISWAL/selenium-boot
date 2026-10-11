@@ -52,6 +52,7 @@ public class LocatorStaleElementTest {
         WebElement el = mock(WebElement.class);
         when(el.isDisplayed()).thenReturn(true);
         when(el.isEnabled()).thenReturn(true);
+        when(el.getCssValue(anyString())).thenReturn("block");
         return el;
     }
 
@@ -189,5 +190,118 @@ public class LocatorStaleElementTest {
         Locator.of(by).jsClick();
 
         verify(js).executeScript(anyString(), eq(fresh));
+    }
+
+    @Test
+    public void clear_elementGoesStale_reResolvesAndClearsFreshElement() {
+        WebElement stale = liveElement();
+        doThrow(new StaleElementReferenceException("re-rendered")).when(stale).clear();
+        WebElement fresh = liveElement();
+        By by = By.id("name");
+        when(driver.findElements(by)).thenReturn(List.of(stale)).thenReturn(List.of(fresh));
+
+        Locator.of(by).clear();
+
+        verify(fresh).clear();
+    }
+
+    @Test
+    public void clear_elementNeverAppears_throwsLocatorExceptionCausedByTimeout() {
+        By by = By.id("never");
+        when(driver.findElements(by)).thenReturn(List.of());
+
+        try {
+            Locator.of(by).clear();
+            org.testng.Assert.fail("expected LocatorException");
+        } catch (com.seleniumboot.locator.LocatorException e) {
+            org.testng.Assert.assertTrue(e.getMessage().contains("No element found"), e.getMessage());
+            org.testng.Assert.assertTrue(e.getMessage().contains("waited 2s"), e.getMessage());
+            org.testng.Assert.assertTrue(e.getCause() instanceof org.openqa.selenium.TimeoutException);
+        }
+    }
+
+    @Test
+    public void check_elementGoesStale_reResolvesAndChecksFreshElement() {
+        WebElement stale = liveElement();
+        when(stale.isSelected()).thenReturn(false);
+        doThrow(new StaleElementReferenceException("re-rendered")).when(stale).click();
+        WebElement fresh = liveElement();
+        when(fresh.isSelected()).thenReturn(false);
+        By by = By.id("agree");
+        when(driver.findElements(by)).thenReturn(List.of(stale)).thenReturn(List.of(fresh));
+
+        Locator.of(by).check();
+
+        verify(fresh).click();
+    }
+
+    @Test
+    public void uncheck_elementGoesStale_reResolvesAndUnchecksFreshElement() {
+        WebElement stale = liveElement();
+        when(stale.isSelected()).thenReturn(true);
+        doThrow(new StaleElementReferenceException("re-rendered")).when(stale).click();
+        WebElement fresh = liveElement();
+        when(fresh.isSelected()).thenReturn(true);
+        By by = By.id("newsletter");
+        when(driver.findElements(by)).thenReturn(List.of(stale)).thenReturn(List.of(fresh));
+
+        Locator.of(by).uncheck();
+
+        verify(fresh).click();
+    }
+
+    @Test
+    public void selectOption_elementGoesStale_reResolves() {
+        WebElement staleSelect = liveElement();
+        when(staleSelect.getTagName()).thenReturn("select");
+        when(staleSelect.findElements(any(By.class)))
+                .thenThrow(new StaleElementReferenceException("re-rendered"));
+
+        WebElement freshSelect = liveElement();
+        when(freshSelect.getTagName()).thenReturn("select");
+        WebElement opt = liveElement();
+        when(freshSelect.findElements(By.xpath(".//option[normalize-space(.) = \"UK\"]")))
+                .thenReturn(List.of(opt));
+
+        By by = By.id("country");
+        when(driver.findElements(by)).thenReturn(List.of(staleSelect)).thenReturn(List.of(freshSelect));
+
+        Locator.of(by).selectOption("UK");
+
+        verify(opt, times(1)).click();
+    }
+
+    @Test
+    public void selectOptionByValue_elementGoesStale_reResolves() {
+        WebElement staleSelect = liveElement();
+        when(staleSelect.getTagName()).thenReturn("select");
+        when(staleSelect.findElements(any(By.class)))
+                .thenThrow(new StaleElementReferenceException("re-rendered"));
+
+        WebElement freshSelect = liveElement();
+        when(freshSelect.getTagName()).thenReturn("select");
+        WebElement opt = liveElement();
+        when(freshSelect.findElements(By.xpath(".//option[@value = \"uk\"]")))
+                .thenReturn(List.of(opt));
+
+        By by = By.id("country");
+        when(driver.findElements(by)).thenReturn(List.of(staleSelect)).thenReturn(List.of(freshSelect));
+
+        Locator.of(by).selectOptionByValue("uk");
+
+        verify(opt, times(1)).click();
+    }
+
+    @Test
+    public void inputValue_elementGoesStale_reResolves() {
+        WebElement stale = liveElement();
+        when(stale.getDomProperty("value"))
+                .thenThrow(new StaleElementReferenceException("re-rendered"));
+        WebElement fresh = liveElement();
+        when(fresh.getDomProperty("value")).thenReturn("admin");
+        By by = By.id("user");
+        when(driver.findElements(by)).thenReturn(List.of(stale)).thenReturn(List.of(fresh));
+
+        assertEquals(Locator.of(by).inputValue(), "admin");
     }
 }
