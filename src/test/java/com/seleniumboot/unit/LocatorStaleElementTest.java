@@ -303,6 +303,9 @@ public class LocatorStaleElementTest {
         when(driver.findElements(by)).thenReturn(List.of(stale)).thenReturn(List.of(fresh));
 
         assertEquals(Locator.of(by).inputValue(), "admin");
+    }
+
+    @Test
     public void last_elementGoesStaleBetweenCheckAndClick_reResolvesAndClicksFreshLastElement() {
         WebElement other = liveElement();
         WebElement staleLast = liveElement();
