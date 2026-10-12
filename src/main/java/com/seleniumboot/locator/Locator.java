@@ -7,6 +7,7 @@ import com.seleniumboot.internal.SeleniumBootContext;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.OutputType;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
@@ -14,8 +15,12 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -287,6 +292,49 @@ public final class Locator {
     // ------------------------------------------------------------------
 
     /**
+     * Waits for the element to reach the specified {@link State}.
+     *
+     * <p>Re-resolves from scratch on every poll and retries stale or not-yet-present
+     * elements until {@code timeouts.explicit} elapses.
+     *
+     * <pre>
+     * $("#spinner").waitFor(State.DETACHED);
+     * $(".toast").waitFor(State.VISIBLE);
+     * </pre>
+     *
+     * @param state target element lifecycle state (visible, hidden, attached, detached)
+     * @throws LocatorException if the element does not reach {@code state} within {@code timeouts.explicit}
+     */
+    public void waitFor(State state) {
+        if (state == null) {
+            state = State.VISIBLE;
+        }
+        SeleniumBootConfig cfg = SeleniumBootContext.getConfig();
+        int timeout = cfg.getTimeouts().getExplicit();
+        final State targetState = state;
+        try {
+            new WebDriverWait(driver(), Duration.ofSeconds(timeout))
+                    .ignoring(StaleElementReferenceException.class, LocatorException.class)
+                    .until(d -> checkState(targetState));
+        } catch (TimeoutException e) {
+            throw new LocatorException("Element did not reach state " + targetState + ": " + describe()
+                    + " (waited " + timeout + "s)", e);
+        }
+        if (cfg.getDebug().getSlowMoMs() > 0) slowMo(cfg.getDebug().getSlowMoMs());
+    }
+
+    /**
+     * Waits for the element to be visible.
+     *
+     * <p>Equivalent to {@code waitFor(State.VISIBLE)}.
+     *
+     * @throws LocatorException if the element does not become visible within {@code timeouts.explicit}
+     */
+    public void waitFor() {
+        waitFor(State.VISIBLE);
+    }
+
+    /**
      * Waits for the element to exist and be clickable, then clicks it.
      *
      * <p>Like every terminal action, the element is re-resolved on each poll: one that is not in
@@ -500,9 +548,77 @@ public final class Locator {
         });
     }
 
+    /**
+     * Captures a PNG screenshot of the resolved element and returns its bytes.
+     *
+     * <p>Waits for the element to be visible, re-resolving from scratch on every poll
+     * and retrying stale or not-yet-present elements until {@code timeouts.explicit} elapses.
+     *
+     * @return PNG image bytes of the element
+     * @throws LocatorException if the element does not become visible within {@code timeouts.explicit}
+     */
+    public byte[] screenshot() {
+        return whenVisible(el -> el.getScreenshotAs(OutputType.BYTES));
+    }
+
+    /**
+     * Captures a PNG screenshot of the resolved element and writes it to the specified file path.
+     *
+     * <p>Creates parent directories if they do not exist. Waits for the element to be visible,
+     * re-resolving from scratch on every poll until {@code timeouts.explicit} elapses.
+     *
+     * @param path destination path for the PNG file
+     * @throws LocatorException if the element cannot be resolved or if writing to the path fails
+     */
+    public void screenshot(Path path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Screenshot path cannot be null");
+        }
+        byte[] bytes = screenshot();
+        try {
+            Path parent = path.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            Files.write(path, bytes);
+        } catch (IOException e) {
+            throw new LocatorException("Failed to write screenshot to '" + path + "': " + e.getMessage(), e);
+        }
+    }
+
     /** Returns the number of elements currently matching the locator chain (no wait). */
     public int count() {
         return resolveAll().size();
+    }
+
+    /**
+     * Returns the text content of all elements matching this locator chain, without waiting.
+     *
+     * <p>Returns an empty list immediately if no elements match.
+     *
+     * @return list of text contents of all matched elements
+     */
+    public List<String> allTextContents() {
+        try {
+            List<WebElement> candidates = resolveAll();
+            if (candidates.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<String> texts = new ArrayList<>(candidates.size());
+            for (WebElement el : candidates) {
+                String text = el.getText();
+                if (text == null || text.isBlank()) {
+                    String dom = el.getDomProperty("textContent");
+                    if (dom != null && !dom.isBlank()) {
+                        text = dom;
+                    }
+                }
+                texts.add(text != null ? text.trim() : "");
+            }
+            return texts;
+        } catch (LocatorException e) {
+            return Collections.emptyList();
+        }
     }
 
     /** Returns the resolved {@link WebElement}, applying all chain filters. */
@@ -862,6 +978,52 @@ public final class Locator {
     // ------------------------------------------------------------------
     // Wait helpers
     // ------------------------------------------------------------------
+
+    private Boolean checkState(State state) {
+        switch (state) {
+            case VISIBLE: {
+                try {
+                    WebElement el = resolve();
+                    if (!el.isDisplayed()) return null;
+                    SeleniumBootConfig.Debug debug = SeleniumBootContext.getConfig().getDebug();
+                    if (debug.isHighlight()) highlight(el);
+                    return Boolean.TRUE;
+                } catch (LocatorException | StaleElementReferenceException e) {
+                    return null;
+                }
+            }
+            case HIDDEN: {
+                try {
+                    WebElement el = resolve();
+                    return !el.isDisplayed() ? Boolean.TRUE : null;
+                } catch (LocatorException | StaleElementReferenceException e) {
+                    return Boolean.TRUE;
+                }
+            }
+            case ATTACHED: {
+                try {
+                    WebElement el = resolve();
+                    el.isEnabled();
+                    SeleniumBootConfig.Debug debug = SeleniumBootContext.getConfig().getDebug();
+                    if (debug.isHighlight()) highlight(el);
+                    return Boolean.TRUE;
+                } catch (LocatorException | StaleElementReferenceException e) {
+                    return null;
+                }
+            }
+            case DETACHED: {
+                try {
+                    WebElement el = resolve();
+                    el.isEnabled();
+                    return null;
+                } catch (LocatorException | StaleElementReferenceException e) {
+                    return Boolean.TRUE;
+                }
+            }
+            default:
+                throw new IllegalArgumentException("Unsupported state: " + state);
+        }
+    }
 
     private <T> T whenVisible(Function<WebElement, T> action) {
         return whenReady(WebElement::isDisplayed, action);

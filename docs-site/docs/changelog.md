@@ -11,6 +11,8 @@ All notable changes to Selenium Boot are documented here.
 
 ## [Unreleased]
 
+- **`Locator`: `waitFor(State)`, `allTextContents()`, and element `screenshot()`** — `waitFor(State)` (and `waitFor()`) waits for an element to reach a target lifecycle state (`VISIBLE`, `HIDDEN`, `ATTACHED`, `DETACHED`), retrying up to `timeouts.explicit`. `allTextContents()` returns the text content of all matched elements in a single pass without waiting if empty. `screenshot()` returns the element's PNG bytes, and `screenshot(Path)` writes them to a file path; both terminal actions re-resolve on every poll to survive stale elements. (#135)
+
 - **Failure grouping** — the report's Failures tab now opens with a "N tests, same cause" panel: failed tests are grouped by a signature of category, exception type, normalised message (ids, numbers and quoted values stripped) and top application stack frame. The flat per-class list is unchanged below it. With `ai.failureAnalysis` on, one Claude call is made per group; the other tests in the group reuse its analysis. The metrics JSON gains `failureSignature`. (#140)
 
 - **`Locator` form actions: `clear()`, `check()`, `uncheck()`, `isChecked()`, `selectOption(text)`, `selectOptionByValue(value)`, `inputValue()`** — form controls can now be manipulated and inspected directly on `Locator` without falling back to `BasePage` helpers or raw `WebElement`s. `check()` and `uncheck()` are idempotent (no click if already in the target state), `isChecked()` queries checked state without waiting, and terminal actions (`clear`, `check`, `uncheck`, `selectOption`, `selectOptionByValue`, `inputValue`) auto-wait, re-resolving from scratch on every poll to survive stale or late-appearing elements. (#133)

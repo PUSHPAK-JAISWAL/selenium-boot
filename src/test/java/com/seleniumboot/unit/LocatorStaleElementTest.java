@@ -4,8 +4,10 @@ import com.seleniumboot.config.SeleniumBootConfig;
 import com.seleniumboot.driver.DriverManager;
 import com.seleniumboot.internal.SeleniumBootContext;
 import com.seleniumboot.locator.Locator;
+import com.seleniumboot.locator.State;
 import org.mockito.MockedStatic;
 import org.openqa.selenium.By;
+import org.openqa.selenium.OutputType;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -352,5 +354,48 @@ public class LocatorStaleElementTest {
 
         verify(freshFirst, times(1)).click();
         verify(staleFirst, times(1)).click();
+    }
+
+    @Test
+    public void waitFor_visible_elementGoesStale_reResolves() {
+        WebElement stale = mock(WebElement.class);
+        when(stale.isDisplayed()).thenThrow(new StaleElementReferenceException("detached"));
+        WebElement fresh = liveElement();
+        By by = By.id("status");
+        when(driver.findElements(by)).thenReturn(List.of(stale)).thenReturn(List.of(fresh));
+
+        Locator.of(by).waitFor(State.VISIBLE);
+
+        verify(fresh, atLeastOnce()).isDisplayed();
+    }
+
+    @Test
+    public void waitFor_hidden_elementGoesStaleWhileChecking_reResolves() {
+        WebElement stale = mock(WebElement.class);
+        when(stale.isDisplayed()).thenThrow(new StaleElementReferenceException("detached"));
+        By by = By.id("loader");
+        when(driver.findElements(by)).thenReturn(List.of(stale)).thenReturn(List.of());
+
+        Locator.of(by).waitFor(State.HIDDEN);
+        // Completed successfully
+    }
+
+    @Test
+    public void screenshot_elementGoesStaleBetweenCheckAndCapture_reResolvesAndCaptures() {
+        WebElement stale = liveElement();
+        when(stale.getScreenshotAs(OutputType.BYTES))
+                .thenThrow(new StaleElementReferenceException("re-rendered"));
+        WebElement fresh = liveElement();
+        byte[] expected = new byte[]{1, 2, 3};
+        when(fresh.getScreenshotAs(OutputType.BYTES)).thenReturn(expected);
+
+        By by = By.id("card");
+        when(driver.findElements(by)).thenReturn(List.of(stale)).thenReturn(List.of(fresh));
+
+        byte[] result = Locator.of(by).screenshot();
+
+        assertEquals(result, expected);
+        verify(stale, times(1)).getScreenshotAs(OutputType.BYTES);
+        verify(fresh, times(1)).getScreenshotAs(OutputType.BYTES);
     }
 }
