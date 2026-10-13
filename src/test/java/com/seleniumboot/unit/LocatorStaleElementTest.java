@@ -4,6 +4,7 @@ import com.seleniumboot.config.SeleniumBootConfig;
 import com.seleniumboot.driver.DriverManager;
 import com.seleniumboot.internal.SeleniumBootContext;
 import com.seleniumboot.locator.Locator;
+import com.seleniumboot.locator.LocatorException;
 import com.seleniumboot.locator.State;
 import org.mockito.MockedStatic;
 import org.openqa.selenium.By;
@@ -377,7 +378,40 @@ public class LocatorStaleElementTest {
         when(driver.findElements(by)).thenReturn(List.of(stale)).thenReturn(List.of());
 
         Locator.of(by).waitFor(State.HIDDEN);
-        // Completed successfully
+
+        verify(driver, times(2)).findElements(by);
+    }
+
+    @Test(expectedExceptions = LocatorException.class)
+    public void waitFor_hidden_elementGoesStaleAndReRendersStillDisplayed_throwsLocatorException() {
+        WebElement stale = mock(WebElement.class);
+        when(stale.isDisplayed()).thenThrow(new StaleElementReferenceException("re-rendered"));
+        WebElement freshVisible = liveElement();
+        By by = By.id("spinner");
+        when(driver.findElements(by)).thenReturn(List.of(stale)).thenReturn(List.of(freshVisible));
+
+        Locator.of(by).waitFor(State.HIDDEN);
+    }
+
+    @Test
+    public void allTextContents_elementGoesStaleBetweenResolveAndGetText_reResolves() {
+        WebElement el1 = liveElement();
+        when(el1.getText()).thenReturn("Alpha");
+        WebElement staleEl2 = liveElement();
+        when(staleEl2.getText()).thenThrow(new StaleElementReferenceException("re-rendered"));
+
+        WebElement freshEl1 = liveElement();
+        when(freshEl1.getText()).thenReturn("Alpha");
+        WebElement freshEl2 = liveElement();
+        when(freshEl2.getText()).thenReturn("Beta");
+
+        By by = By.cssSelector(".item");
+        when(driver.findElements(by))
+                .thenReturn(List.of(el1, staleEl2))
+                .thenReturn(List.of(freshEl1, freshEl2));
+
+        assertEquals(Locator.of(by).allTextContents(), List.of("Alpha", "Beta"));
+        verify(driver, times(2)).findElements(by);
     }
 
     @Test

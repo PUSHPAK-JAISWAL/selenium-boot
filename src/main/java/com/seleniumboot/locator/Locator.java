@@ -592,33 +592,48 @@ public final class Locator {
     }
 
     /**
-     * Returns the text content of all elements matching this locator chain, without waiting.
+     * Returns the text content of all elements matching this locator chain, without waiting for
+     * elements to appear.
      *
-     * <p>Returns an empty list immediately if no elements match.
+     * <p>Returns an empty list immediately if no elements match. Returns each element's rendered
+     * text ({@link WebElement#getText()}), falling back to its DOM {@code textContent} property
+     * for hidden elements whose rendered text is blank. If an element goes stale while its text
+     * is being read, the list is re-resolved from scratch until {@code timeouts.explicit} elapses.
      *
      * @return list of text contents of all matched elements
      */
     public List<String> allTextContents() {
-        try {
-            List<WebElement> candidates = resolveAll();
-            if (candidates.isEmpty()) {
-                return Collections.emptyList();
-            }
-            List<String> texts = new ArrayList<>(candidates.size());
-            for (WebElement el : candidates) {
-                String text = el.getText();
-                if (text == null || text.isBlank()) {
-                    String dom = el.getDomProperty("textContent");
-                    if (dom != null && !dom.isBlank()) {
-                        text = dom;
+        SeleniumBootConfig cfg = SeleniumBootContext.getConfig();
+        int timeout = cfg.getTimeouts().getExplicit();
+        AtomicReference<List<String>> result = new AtomicReference<>();
+        new WebDriverWait(driver(), Duration.ofSeconds(timeout))
+                .ignoring(StaleElementReferenceException.class)
+                .until(d -> {
+                    try {
+                        List<WebElement> candidates = resolveAll();
+                        if (candidates.isEmpty()) {
+                            result.set(Collections.emptyList());
+                            return Boolean.TRUE;
+                        }
+                        List<String> texts = new ArrayList<>(candidates.size());
+                        for (WebElement el : candidates) {
+                            String text = el.getText();
+                            if (text == null || text.isBlank()) {
+                                String dom = el.getDomProperty("textContent");
+                                if (dom != null && !dom.isBlank()) {
+                                    text = dom;
+                                }
+                            }
+                            texts.add(text != null ? text.trim() : "");
+                        }
+                        result.set(texts);
+                        return Boolean.TRUE;
+                    } catch (LocatorException e) {
+                        result.set(Collections.emptyList());
+                        return Boolean.TRUE;
                     }
-                }
-                texts.add(text != null ? text.trim() : "");
-            }
-            return texts;
-        } catch (LocatorException e) {
-            return Collections.emptyList();
-        }
+                });
+        return result.get();
     }
 
     /** Returns the resolved {@link WebElement}, applying all chain filters. */
@@ -996,8 +1011,10 @@ public final class Locator {
                 try {
                     WebElement el = resolve();
                     return !el.isDisplayed() ? Boolean.TRUE : null;
-                } catch (LocatorException | StaleElementReferenceException e) {
+                } catch (LocatorException e) {
                     return Boolean.TRUE;
+                } catch (StaleElementReferenceException e) {
+                    return null;
                 }
             }
             case ATTACHED: {
@@ -1013,11 +1030,12 @@ public final class Locator {
             }
             case DETACHED: {
                 try {
-                    WebElement el = resolve();
-                    el.isEnabled();
+                    resolve();
                     return null;
-                } catch (LocatorException | StaleElementReferenceException e) {
+                } catch (LocatorException e) {
                     return Boolean.TRUE;
+                } catch (StaleElementReferenceException e) {
+                    return null;
                 }
             }
             default:

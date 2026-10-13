@@ -873,4 +873,3 @@ public class LocatorTest {
         Locator.of(By.id("card")).screenshot(null);
     }
 }
-
