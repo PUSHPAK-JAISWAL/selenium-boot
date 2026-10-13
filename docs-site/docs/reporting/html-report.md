@@ -84,6 +84,42 @@ When two or more failures share a cause, the Failures tab lists them above the f
 
 ---
 
+### Retry and history status
+
+Each test is also compared with its own earlier runs in `target/metrics-history/` (the last `flakiness.historyRuns`, the same window the Flakiness Radar uses). A "Test status" card next to the Radar lists the tests that need a second look, and the status appears at the top of the failure's detail panel:
+
+| Status | Meaning |
+|---|---|
+| **Newly failing** | Failed now; every earlier run in the window passed. Listed first in the Failures tab, since a recent change most likely broke it. |
+| **Consistently failing** | Failed now and in at least two earlier runs, with no pass among them. |
+| **Intermittent** | Failed now; the earlier runs contain both passes and failures. |
+| **Passed on retry** | Failed an attempt in this run, then passed on a retry. |
+
+A test that passed on its first attempt gets no status, and a test with no history gets none either (except passed on retry, which needs no history). Statuses are written to the metrics JSON as `testStatus`. The Radar's STABLE / WATCH / HIGH thresholds and the `failOnHighFlakiness` gate are unchanged.
+
+### Keeping history in CI
+
+The Flakiness Radar and every status except **Passed on retry** need earlier runs. If your build wipes `target/` (`mvn clean`) or the CI workspace is thrown away after each job, there is nothing to compare with and those parts of the report stay empty. Keep the history somewhere that survives, and point Selenium Boot at it:
+
+```yaml
+flakiness:
+  historyDir: .selenium-boot-history   # relative to the project, or an absolute path
+```
+
+or, without touching the config file, `-Dseleniumboot.history.dir=/path/to/history` (the system property wins).
+
+Then persist that directory between runs. With GitHub Actions, for example:
+
+```yaml
+- uses: actions/cache@v4
+  with:
+    path: .selenium-boot-history
+    key: selenium-boot-history-${{ github.run_id }}
+    restore-keys: selenium-boot-history-
+```
+
+On other CI systems, restore the directory from your artifact store before the run and upload it again afterwards. One JSON file is written per run, so the directory stays small; only the newest `flakiness.historyRuns` files are read.
+
 ## Self-contained format
 
 All screenshots are Base64-encoded and embedded inline. The report is a single file you can:
