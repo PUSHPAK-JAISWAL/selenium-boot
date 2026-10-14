@@ -11,6 +11,8 @@ All notable changes to Selenium Boot are documented here.
 
 ## [Unreleased]
 
+- **Failed tests with trace links in GitHub Actions job summary** — when running inside GitHub Actions and `tracing.enabled: true` is on, failed tests are automatically summarized in a Markdown table (test name, error message, and path to the HTML trace file) appended to `$GITHUB_STEP_SUMMARY`. Triage failures and locate trace paths directly from the Actions job summary without downloading artifact bundles; no-op outside Actions or when all tests pass. (#137)
+
 - **Bounded failure detail record** — every failed test now exports one optional-field `failureDetail` object with the failing locator, top application frame, last successful step, page URL/title, heal events, console errors, retry/history status, and representative same-cause context. The HTML failure panel and opt-in AI prompt reuse this record; raw errors and stack traces remain available. Text/list/URL limits and the exact AI data disclosure are documented. (#142)
 
 - **`Locator`: `waitFor(State)`, `allTextContents()`, and element `screenshot()`** — `waitFor(State)` (and `waitFor()`) waits for an element to reach a target lifecycle state (`VISIBLE`, `HIDDEN`, `ATTACHED`, `DETACHED`), retrying up to `timeouts.explicit`. `allTextContents()` returns the text content of all matched elements in a single pass without waiting if empty, re-resolving if an element goes stale during read. `screenshot()` returns the element's PNG bytes, and `screenshot(Path)` writes them to a file path; both terminal actions re-resolve on every poll to survive stale elements. (#135)

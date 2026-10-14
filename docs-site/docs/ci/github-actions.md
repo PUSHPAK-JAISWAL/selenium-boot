@@ -59,8 +59,21 @@ When it detects a CI environment (GitHub Actions, Jenkins, CircleCI and others),
 - `execution.threadCount` is derived from the available CPU cores, capped at `execution.maxActiveSessions` — only when you left it at the default of `1` and `parallel` is not `none`.
 - Inside Docker or Kubernetes, Chrome and Firefox get the container flags they need (for Chrome: `--no-sandbox`, `--disable-dev-shm-usage`, `--disable-gpu`, `--window-size=1920,1080`).
 - JUnit XML is written to `target/surefire-reports/TEST-SeleniumBoot.xml` on every run.
+- When running in GitHub Actions and `tracing.enabled: true` is on, failed tests are summarized in a Markdown table (test name, error, and path to `target/traces/...`) appended to `$GITHUB_STEP_SUMMARY` so failures are visible without opening artifacts.
 
 Each override is printed to the console as `[Selenium Boot] CI override: …`.
+
+---
+
+## Job summary with trace links
+
+When `tracing.enabled: true` is enabled in `selenium-boot.yml` and tests fail, Selenium Boot automatically appends a Markdown table to `$GITHUB_STEP_SUMMARY`:
+
+| Test | Error | Trace |
+| --- | --- | --- |
+| `com.example.LoginTest#testInvalidLogin` | Expected [Dashboard] but found [401 Unauthorized] | target/traces/LoginTest/testInvalidLogin-trace.html |
+
+This lists every failing test, its error message, and the path to its trace file directly in the GitHub Actions run summary page. If no tests fail or outside GitHub Actions, nothing is written.
 
 ---
 

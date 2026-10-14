@@ -1,6 +1,7 @@
 package com.seleniumboot.listeners;
 
 import com.seleniumboot.ci.BuildThresholdEnforcer;
+import com.seleniumboot.ci.GitHubActionsSummary;
 import com.seleniumboot.flakiness.FlakinessAnalyzer;
 import com.seleniumboot.healing.HealLog;
 import com.seleniumboot.config.SeleniumBootConfig;
@@ -99,6 +100,10 @@ public final class SuiteExecutionListener implements ISuiteListener {
                 suite.getAllInvokedMethods().size() > 0
                         ? System.currentTimeMillis() : 0L);
 
+        // GitHub Actions job summary (appends failed tests with trace links)
+        SeleniumBootConfig config = SeleniumBootContext.getConfig();
+        GitHubActionsSummary.export(config, ExecutionMetrics.getTimings());
+
         ReportAdapterRegistry.generateAll();
         PreConditionRunner.clearAll();
         DriverManager.quitAllSuiteDrivers(); // per-suite lifecycle — quits all kept-alive drivers
@@ -108,7 +113,6 @@ public final class SuiteExecutionListener implements ISuiteListener {
         PluginRegistry.unloadAll();
 
         // Build quality gates — must run last so all metrics are recorded
-        SeleniumBootConfig config = SeleniumBootContext.getConfig();
         BuildThresholdEnforcer.enforce(config, ExecutionMetrics.getTimings());
     }
 }

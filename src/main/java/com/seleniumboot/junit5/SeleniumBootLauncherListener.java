@@ -2,6 +2,7 @@ package com.seleniumboot.junit5;
 
 import com.seleniumboot.api.SeleniumBootApi;
 import com.seleniumboot.ci.BuildThresholdEnforcer;
+import com.seleniumboot.ci.GitHubActionsSummary;
 import com.seleniumboot.config.SeleniumBootConfig;
 import com.seleniumboot.flakiness.FlakinessAnalyzer;
 import com.seleniumboot.hooks.HookRegistry;
@@ -37,12 +38,14 @@ public class SeleniumBootLauncherListener implements TestExecutionListener {
 
             JUnitXmlReporter.export(ExecutionMetrics.getTimings(), System.currentTimeMillis());
 
+            SeleniumBootConfig config = SeleniumBootContext.getConfig();
+            GitHubActionsSummary.export(config, ExecutionMetrics.getTimings());
+
             ReportAdapterRegistry.generateAll();
             PreConditionRunner.clearAll();
             HookRegistry.onSuiteEnd();
             TestManagementReporter.getInstance().onSuiteEnd();
 
-            SeleniumBootConfig config = SeleniumBootContext.getConfig();
             if (config != null) {
                 BuildThresholdEnforcer.enforce(config, ExecutionMetrics.getTimings());
             }

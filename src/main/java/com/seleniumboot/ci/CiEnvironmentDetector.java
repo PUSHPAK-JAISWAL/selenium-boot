@@ -32,6 +32,13 @@ public final class CiEnvironmentDetector {
     }
 
     /**
+     * Returns true if running inside GitHub Actions.
+     */
+    public static boolean isGitHubActions() {
+        return isEnvSet("GITHUB_ACTIONS");
+    }
+
+    /**
      * Returns a human-readable name for the detected CI provider.
      */
     public static String ciName() {

@@ -34,6 +34,7 @@ const sidebars = {
         'guides/retry',
         'guides/screenshots',
         'guides/step-logging',
+        'guides/trace-viewer',
         'guides/browser-lifecycle',
         'guides/parallel',
         'guides/smart-locator',

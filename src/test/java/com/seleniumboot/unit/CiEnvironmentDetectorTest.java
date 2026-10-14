@@ -81,4 +81,14 @@ public class CiEnvironmentDetectorTest {
         boolean result = CiEnvironmentDetector.isCI();
         assertTrue(result || !result);
     }
+
+    // ----------------------------------------------------------
+    // isGitHubActions() — returns boolean without throwing
+    // ----------------------------------------------------------
+
+    @Test
+    public void isGitHubActions_returnsBooleanWithoutThrowing() {
+        boolean result = CiEnvironmentDetector.isGitHubActions();
+        assertTrue(result || !result);
+    }
 }
