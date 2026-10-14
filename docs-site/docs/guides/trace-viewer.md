@@ -60,3 +60,4 @@ When running in GitHub Actions and `tracing.enabled: true` is on, failed tests a
 | `com.example.CartTest.testCheckout` | `Timeout waiting for element` | `target/traces/CartTest/testCheckout-trace.html` |
 
 This lets teams triage failures and locate the corresponding HTML trace file directly on the Actions job summary page without downloading and extracting artifact archives.
+
