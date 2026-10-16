@@ -28,7 +28,14 @@ import org.testng.annotations.Listeners;
  *
  * <p>Step definition classes should extend {@link BaseCucumberSteps} to get
  * {@code getDriver()}, {@code open()}, {@code $()} and {@code assertThat()}.
+ *
+ * @deprecated since 3.9.0. {@link AbstractTestNGCucumberTests} has been deprecated for
+ *     removal upstream in Cucumber 8.x. New suites should use JUnit Platform Engine
+ *     ({@code cucumber-junit-platform-engine}) with {@code @Suite}. This class will be
+ *     removed in 4.0.0 once Cucumber drops TestNG runner support.
  */
+@Deprecated(since = "3.9.0")
+@SuppressWarnings({"deprecation", "removal"})
 @SeleniumBootApi(since = "1.9.0")
 @Listeners({SuiteExecutionListener.class, TestExecutionListener.class})
 public abstract class BaseCucumberTest extends AbstractTestNGCucumberTests {

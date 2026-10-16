@@ -86,6 +86,13 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>8.0.3</version>
+            <optional>true</optional>
+        </dependency>
+
         <!--
             JUnit 5 support — optional so it is NOT pulled transitively for TestNG users.
             Consumers who use JUnit 5 must add junit-jupiter and junit-platform-launcher

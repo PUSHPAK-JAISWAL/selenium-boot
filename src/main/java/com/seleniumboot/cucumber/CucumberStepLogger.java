@@ -43,7 +43,7 @@ public final class CucumberStepLogger implements ConcurrentEventListener {
             return;
         }
         if (event.getTestStep() instanceof PickleStepTestStep step) {
-            CURRENT_STEP.set(step.getStepText());
+            CURRENT_STEP.set(step.getStep().getText());
         }
     }
 
