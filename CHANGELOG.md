@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Unreleased
 
+- **`BaseCucumberTest` deprecated** — `@Deprecated(since = "3.9.0")`, because `AbstractTestNGCucumberTests` is deprecated for removal upstream in Cucumber 8.x. Nothing changes at runtime and existing TestNG Cucumber suites keep working; subclasses now get a deprecation warning. Plan to remove it in 4.0.0, once Cucumber drops its TestNG runner, in favour of `cucumber-junit-platform-engine` (added as an optional dependency). `CucumberStepLogger` also moves off the deprecated `getStepText()`. (#155, #157)
+
 - **Bounded failure detail record** — every failed test now exports one optional-field `failureDetail` object with the failing locator, top application frame, last successful step, page URL/title, heal events, console errors, retry/history status, and representative same-cause context. The HTML failure panel and opt-in AI prompt reuse this record; raw errors and stack traces remain available. Text/list/URL limits and the exact AI data disclosure are documented. (#142)
 
 - **`Locator`: `waitFor(State)`, `allTextContents()`, and element `screenshot()`** — `waitFor(State)` (and `waitFor()`) waits for an element to reach a target lifecycle state (`VISIBLE`, `HIDDEN`, `ATTACHED`, `DETACHED`), retrying up to `timeouts.explicit`. `allTextContents()` returns the text content of all matched elements in a single pass without waiting if empty, re-resolving if an element goes stale during read. `screenshot()` returns the element's PNG bytes, and `screenshot(Path)` writes them to a file path; both terminal actions re-resolve on every poll to survive stale elements. (#135)
