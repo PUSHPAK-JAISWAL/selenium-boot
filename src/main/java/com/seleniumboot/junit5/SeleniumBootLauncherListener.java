@@ -2,10 +2,12 @@ package com.seleniumboot.junit5;
 
 import com.seleniumboot.api.SeleniumBootApi;
 import com.seleniumboot.ci.BuildThresholdEnforcer;
+import com.seleniumboot.ci.GitHubActionsSummary;
 import com.seleniumboot.config.SeleniumBootConfig;
 import com.seleniumboot.flakiness.FlakinessAnalyzer;
 import com.seleniumboot.hooks.HookRegistry;
 import com.seleniumboot.internal.SeleniumBootContext;
+import com.seleniumboot.lifecycle.FrameworkBootstrap;
 import com.seleniumboot.metrics.ExecutionMetrics;
 import com.seleniumboot.reporting.JUnitXmlReporter;
 import com.seleniumboot.precondition.PreConditionRunner;
@@ -28,6 +30,22 @@ import org.junit.platform.launcher.TestPlan;
 @SeleniumBootApi(since = "1.9.0")
 public class SeleniumBootLauncherListener implements TestExecutionListener {
 
+    /**
+     * Fires suite-start hooks once per test plan — the JUnit 5 equivalent of
+     * {@code SuiteExecutionListener.onStart()}. Bootstrap is idempotent, so this is
+     * safe alongside {@link SeleniumBootExtension#beforeAll}. A bootstrap failure is
+     * left for the extension to surface with its full cause chain.
+     */
+    @Override
+    public void testPlanExecutionStarted(TestPlan testPlan) {
+        try {
+            FrameworkBootstrap.initialize();
+            HookRegistry.onSuiteStart();
+        } catch (Exception e) {
+            System.err.println("[Selenium Boot] Suite start hooks skipped: " + e.getMessage());
+        }
+    }
+
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
         try {
@@ -37,12 +55,14 @@ public class SeleniumBootLauncherListener implements TestExecutionListener {
 
             JUnitXmlReporter.export(ExecutionMetrics.getTimings(), System.currentTimeMillis());
 
+            SeleniumBootConfig config = SeleniumBootContext.getConfig();
+            GitHubActionsSummary.export(config, ExecutionMetrics.getTimings());
+
             ReportAdapterRegistry.generateAll();
             PreConditionRunner.clearAll();
             HookRegistry.onSuiteEnd();
             TestManagementReporter.getInstance().onSuiteEnd();
 
-            SeleniumBootConfig config = SeleniumBootContext.getConfig();
             if (config != null) {
                 BuildThresholdEnforcer.enforce(config, ExecutionMetrics.getTimings());
             }
