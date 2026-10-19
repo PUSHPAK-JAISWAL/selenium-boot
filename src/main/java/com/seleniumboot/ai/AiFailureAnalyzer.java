@@ -143,8 +143,12 @@ public final class AiFailureAnalyzer {
         com.seleniumboot.failure.FailureClassifier.Result classification =
                 com.seleniumboot.failure.FailureClassifier.classify(timing);
         sb.append("\n## Failure Classification\n");
+        sb.append("- Type:     ").append(classification.type().label()).append(" (").append(classification.type().name()).append(")\n");
         sb.append("- Category: ").append(classification.category().name()).append("\n");
         sb.append("- Evidence: ").append(classification.evidence()).append("\n");
+        if (classification.suggestedAction() != null && !classification.suggestedAction().isBlank()) {
+            sb.append("- Baseline recommendation: ").append(classification.suggestedAction()).append("\n");
+        }
 
         detail.appendPrompt(sb);
 
@@ -173,6 +177,7 @@ public final class AiFailureAnalyzer {
 
         sb.append("\n## Your Task\n");
         sb.append("Provide a concise failure analysis in this exact format:\n\n");
+        sb.append("**Classification:** (Product Bug | Test Bug | Environment | Flaky)\n\n");
         sb.append("**Root Cause:** (1-2 sentences explaining what likely went wrong)\n\n");
         sb.append("**Suggested Fix:**\n- (bullet 1)\n- (bullet 2, if needed)\n\n");
         sb.append("Be specific and actionable. Do not repeat the error message verbatim.");

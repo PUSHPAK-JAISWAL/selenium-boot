@@ -28,6 +28,8 @@ public class FailureDetailTest {
         TestTiming timing = timing("example.CheckoutTest.submit");
         Map<String, Object> detail = FailureDetail.from(timing, TestStatus.NEWLY_FAILING, 2, timing).toMap();
 
+        Assert.assertEquals(detail.get("failureType"), "TEST_BUG");
+        Assert.assertNotNull(detail.get("suggestedAction"));
         Assert.assertEquals(detail.get("failingLocator"), "By.cssSelector: #submit");
         Assert.assertEquals(detail.get("applicationFrame"), "example.CheckoutPage.submit(CheckoutPage.java:42)");
         Assert.assertEquals(detail.get("lastSuccessfulStep"), "Fill payment details");

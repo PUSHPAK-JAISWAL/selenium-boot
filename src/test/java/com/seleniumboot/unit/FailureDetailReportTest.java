@@ -38,4 +38,29 @@ public class FailureDetailReportTest {
         Assert.assertTrue(html.contains("a=1&amp;b=2"), html);
         Assert.assertFalse(html.contains("<script>"), html);
     }
+
+    @Test
+    public void reportShowsFailureTypeAndSuggestedAction() throws Exception {
+        JsonNode test = new ObjectMapper().readTree("""
+                {
+                  "status": "FAILED",
+                  "failureCategory": "LOCATOR_NOT_FOUND",
+                  "failureEvidence": "NoSuchElementException in cause chain",
+                  "failureType": "TEST_BUG",
+                  "suggestedAction": "Check if locator '#submit' changed"
+                }
+                """);
+        Method method = com.seleniumboot.reporting.HtmlReportGenerator.class
+                .getDeclaredMethod("buildFailureWhy", JsonNode.class);
+        method.setAccessible(true);
+        String html = (String) method.invoke(null, test);
+
+        Assert.assertTrue(html.contains("failure-type-badge"), html);
+        Assert.assertTrue(html.contains("failure-type-test-bug"), html);
+        Assert.assertTrue(html.contains("Test bug"), html);
+        Assert.assertTrue(html.contains("failure-badge"), html);
+        Assert.assertTrue(html.contains("Locator not found"), html);
+        Assert.assertTrue(html.contains("failure-action"), html);
+        Assert.assertTrue(html.contains("Check if locator"), html);
+    }
 }

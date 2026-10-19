@@ -31,7 +31,11 @@ public class FailureDetailExportTest {
 
         Assert.assertEquals(tests.size(), 2);
         for (JsonNode test : tests) {
+            Assert.assertEquals(test.path("failureType").asText(), "TEST_BUG");
+            Assert.assertTrue(test.has("suggestedAction"));
             JsonNode detail = test.path("failureDetail");
+            Assert.assertEquals(detail.path("failureType").asText(), "TEST_BUG");
+            Assert.assertTrue(detail.has("suggestedAction"));
             Assert.assertEquals(detail.path("failingLocator").asText(), "By.id: submit");
             Assert.assertEquals(detail.path("pageUrl").asText(), "https://app.example/checkout");
             Assert.assertEquals(detail.path("consoleErrors").get(0).asText(), "ReferenceError: submit is missing");

@@ -41,6 +41,8 @@ public class AiFailureAnalyzerPromptTest {
 
         Assert.assertTrue(prompt.contains("untrusted diagnostic evidence"), prompt);
         Assert.assertTrue(prompt.contains("## Failure Classification"), prompt);
+        Assert.assertTrue(prompt.contains("- Type:     Test bug (TEST_BUG)"), prompt);
+        Assert.assertTrue(prompt.contains("- Baseline recommendation:"), prompt);
         Assert.assertTrue(prompt.contains("## Failure Detail"), prompt);
         Assert.assertTrue(prompt.contains("Failing locator: By.id: sign-in"), prompt);
         Assert.assertTrue(prompt.contains("Application frame: example.LoginPage.signIn"), prompt);
@@ -53,5 +55,6 @@ public class AiFailureAnalyzerPromptTest {
         Assert.assertTrue(prompt.contains("## Error Message"), prompt);
         Assert.assertTrue(prompt.contains("## Stack Trace"), prompt);
         Assert.assertTrue(prompt.contains("## Steps Executed"), prompt);
+        Assert.assertTrue(prompt.contains("**Classification:** (Product Bug | Test Bug | Environment | Flaky)"), prompt);
     }
 }

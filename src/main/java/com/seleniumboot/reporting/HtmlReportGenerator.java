@@ -436,14 +436,33 @@ public final class HtmlReportGenerator {
             label = cat;
         }
         String evidence = test.has("failureEvidence") ? test.get("failureEvidence").asText() : "";
-        return "<div class=\"failure-why\"><span class=\"failure-badge\">" + escapeHtml(label) + "</span>"
-                + escapeHtml(evidence) + "</div>";
+        String typeBadge = "";
+        if (test.has("failureType")) {
+            String type = test.get("failureType").asText();
+            String typeLabel;
+            try {
+                typeLabel = com.seleniumboot.failure.FailureType.valueOf(type).label();
+            } catch (IllegalArgumentException e) {
+                typeLabel = type;
+            }
+            String typeClass = "failure-type-" + type.toLowerCase(java.util.Locale.ROOT).replace('_', '-');
+            typeBadge = "<span class=\"failure-type-badge " + typeClass + "\">" + escapeHtml(typeLabel) + "</span>";
+        }
+        String actionHtml = "";
+        if (test.has("suggestedAction") && !test.get("suggestedAction").asText().isBlank()) {
+            actionHtml = "<div class=\"failure-action\"><strong>Action:</strong> "
+                    + escapeHtml(test.get("suggestedAction").asText()) + "</div>";
+        }
+        return "<div class=\"failure-why\">" + typeBadge + "<span class=\"failure-badge\">" + escapeHtml(label) + "</span>"
+                + escapeHtml(evidence) + "</div>" + actionHtml;
     }
 
     private static String buildFailureDetailPanel(JsonNode detail) {
         if (detail == null || detail.isEmpty()) return "";
         StringBuilder sb = new StringBuilder("<div class=\"failure-detail-section\">"
                 + "<div class=\"step-timeline-header\">Failure detail</div><ul>");
+        detailItem(sb, "Failure type", detail, "failureType");
+        detailItem(sb, "Suggested action", detail, "suggestedAction");
         detailItem(sb, "Failing locator", detail, "failingLocator");
         detailItem(sb, "Application frame", detail, "applicationFrame");
         detailItem(sb, "Last successful step", detail, "lastSuccessfulStep");

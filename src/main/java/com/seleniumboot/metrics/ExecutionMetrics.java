@@ -431,9 +431,11 @@ public final class ExecutionMetrics {
             }
             if ("FAILED".equals(timing.getStatus())) {
                 com.seleniumboot.failure.FailureClassifier.Result failure =
-                        com.seleniumboot.failure.FailureClassifier.classify(timing);
+                        com.seleniumboot.failure.FailureClassifier.classify(timing, testStatus);
                 testEntry.put("failureCategory", failure.category().name());
                 testEntry.put("failureEvidence", failure.evidence());
+                testEntry.put("failureType", failure.type().name());
+                testEntry.put("suggestedAction", failure.suggestedAction());
                 String signature = com.seleniumboot.failure.FailureSignature.of(timing);
                 testEntry.put("failureSignature", signature);
                 com.seleniumboot.failure.FailureDetail detail =

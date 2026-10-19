@@ -1,5 +1,6 @@
 package com.seleniumboot.failure;
 
+import com.seleniumboot.flakiness.TestStatus;
 import com.seleniumboot.metrics.TestTiming;
 
 import java.util.ArrayList;
@@ -9,8 +10,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Tags a failed test with a {@link FailureCategory} and the evidence for it, using only the
- * error message and stack trace the framework already records. No AI, no network.
+ * Tags a failed test with a {@link FailureCategory}, high-level {@link FailureType}, evidence,
+ * and actionable remediation advice, using only the error message, stack trace, and test metrics
+ * the framework already records. No AI, no network.
  *
  * <p>The exception class chain is read from the printed stack trace (the outer throwable on the
  * first line, each cause on a {@code Caused by:} line), so a {@code LocatorException} whose cause
@@ -19,8 +21,17 @@ import java.util.regex.Pattern;
  */
 public final class FailureClassifier {
 
-    /** Category plus the one-line reason it was chosen. */
-    public record Result(FailureCategory category, String evidence) { }
+    /** Category, high-level triage type, the one-line reason, and actionable remediation advice. */
+    public record Result(FailureCategory category, FailureType type, String evidence, String suggestedAction) {
+        public Result(FailureCategory category, String evidence) {
+            this(category, category != null ? category.defaultType() : FailureType.UNKNOWN,
+                    evidence, category != null ? category.defaultAction() : "");
+        }
+
+        public Result(FailureCategory category, FailureType type, String evidence) {
+            this(category, type, evidence, category != null ? category.defaultAction() : "");
+        }
+    }
 
     private static final Pattern THROWABLE_LINE = Pattern.compile(
             "^(?:Caused by: )?((?:[A-Za-z_$][\\w$]*\\.)+[A-Za-z_$][\\w$]*|[A-Za-z_$][\\w$]*(?:Exception|Error))"
@@ -31,11 +42,28 @@ public final class FailureClassifier {
     private FailureClassifier() { }
 
     public static Result classify(TestTiming timing) {
+        return classify(timing, null);
+    }
+
+    public static Result classify(TestTiming timing, TestStatus status) {
         if (timing == null) return unknown("no failure data");
-        return classify(timing.getErrorMessage(), timing.getStackTrace());
+        Result base = classify(timing.getErrorMessage(), timing.getStackTrace(), status);
+        if (base.category() == FailureCategory.LOCATOR_NOT_FOUND) {
+            String locator = timing.getFailingLocator();
+            if (locator != null && !locator.isBlank()) {
+                String enrichedAction = "Check if locator '" + locator
+                        + "' has changed or if the element is rendered in an iframe/shadow DOM or delayed by async loading.";
+                return new Result(base.category(), base.type(), base.evidence(), enrichedAction);
+            }
+        }
+        return base;
     }
 
     public static Result classify(String errorMessage, String stackTrace) {
+        return classify(errorMessage, stackTrace, null);
+    }
+
+    public static Result classify(String errorMessage, String stackTrace, TestStatus status) {
         List<String> chain = causeChain(stackTrace);
         String outer = chain.isEmpty() ? null : chain.get(0);
         String haystack = ((errorMessage != null ? errorMessage : "") + "\n"
@@ -45,50 +73,101 @@ public final class FailureClassifier {
             return unknown("no error message or stack trace recorded");
         }
 
+        FailureCategory category = null;
+        String evidence = null;
+
         // A failed assertion is the test doing its job, whatever text its message happens to contain.
         if (outer != null && isAssertion(outer)) {
-            return new Result(FailureCategory.ASSERTION_MISMATCH, "assertion failed (" + simple(outer) + ")");
-        }
-
-        String hit = firstMatch(chain, "NoSuchSessionException", "UnreachableBrowserException",
-                "SessionNotCreatedException");
-        if (hit != null) return result(FailureCategory.BROWSER_CRASH, simple(hit) + " in cause chain");
-        String crash = containsAny(haystack, "invalid session id", "session deleted because of page crash",
-                "chrome not reachable", "not connected to devtools", "target frame detached",
-                "browser has closed the connection", "tab crashed");
-        if (crash != null) return result(FailureCategory.BROWSER_CRASH, "message contains \"" + crash + "\"");
-
-        String nav = containsAny(haystack, "net::err_", "err_name_not_resolved", "dnsnotfound",
-                "reached error page", "unknownhostexception", "timed out receiving message from renderer",
-                "page load timeout", "pageloadstrategy");
-        if (nav != null) return result(FailureCategory.NAVIGATION_ERROR, "message contains \"" + nav + "\"");
-        Matcher http = Pattern.compile("(?:http|status)[ :=]+(5\\d\\d)\\b").matcher(haystack);
-        if (http.find()) return result(FailureCategory.NAVIGATION_ERROR, "HTTP " + http.group(1) + " in message");
-
-        hit = firstMatch(chain, "StaleElementReferenceException");
-        if (hit != null) return result(FailureCategory.STALE_ELEMENT, simple(hit) + " in cause chain");
-
-        hit = firstMatch(chain, "ElementNotInteractableException", "ElementClickInterceptedException",
-                "InvalidElementStateException", "ElementNotSelectableException");
-        if (hit != null) return result(FailureCategory.ELEMENT_NOT_INTERACTABLE, simple(hit) + " in cause chain");
-
-        hit = firstMatch(chain, "LocatorException", "NoSuchElementException", "NoSuchFrameException",
-                "NoSuchShadowRootException");
-        if (hit != null) return result(FailureCategory.LOCATOR_NOT_FOUND, simple(hit) + " in cause chain");
-
-        hit = firstMatch(chain, "TimeoutException");
-        if (hit != null) return result(FailureCategory.TIMEOUT, simple(hit) + " with no locator or navigation cause");
-
-        for (String c : chain) {
-            if (isAssertion(c)) {
-                return result(FailureCategory.ASSERTION_MISMATCH, simple(c) + " in cause chain");
+            category = FailureCategory.ASSERTION_MISMATCH;
+            evidence = "assertion failed (" + simple(outer) + ")";
+        } else {
+            String hit = firstMatch(chain, "NoSuchSessionException", "UnreachableBrowserException",
+                    "SessionNotCreatedException");
+            if (hit != null) {
+                category = FailureCategory.BROWSER_CRASH;
+                evidence = simple(hit) + " in cause chain";
+            } else {
+                String crash = containsAny(haystack, "invalid session id", "session deleted because of page crash",
+                        "chrome not reachable", "not connected to devtools", "target frame detached",
+                        "browser has closed the connection", "tab crashed");
+                if (crash != null) {
+                    category = FailureCategory.BROWSER_CRASH;
+                    evidence = "message contains \"" + crash + "\"";
+                } else {
+                    String nav = containsAny(haystack, "net::err_", "err_name_not_resolved", "dnsnotfound",
+                            "reached error page", "unknownhostexception", "timed out receiving message from renderer",
+                            "page load timeout", "pageloadstrategy");
+                    if (nav != null) {
+                        category = FailureCategory.NAVIGATION_ERROR;
+                        evidence = "message contains \"" + nav + "\"";
+                    } else {
+                        Matcher http = Pattern.compile("(?:http|status)[ :=]+(5\\d\\d)\\b").matcher(haystack);
+                        if (http.find()) {
+                            category = FailureCategory.NAVIGATION_ERROR;
+                            evidence = "HTTP " + http.group(1) + " in message";
+                        } else {
+                            hit = firstMatch(chain, "StaleElementReferenceException");
+                            if (hit != null) {
+                                category = FailureCategory.STALE_ELEMENT;
+                                evidence = simple(hit) + " in cause chain";
+                            } else {
+                                hit = firstMatch(chain, "ElementNotInteractableException", "ElementClickInterceptedException",
+                                        "InvalidElementStateException", "ElementNotSelectableException");
+                                if (hit != null) {
+                                    category = FailureCategory.ELEMENT_NOT_INTERACTABLE;
+                                    evidence = simple(hit) + " in cause chain";
+                                } else {
+                                    hit = firstMatch(chain, "LocatorException", "NoSuchElementException", "NoSuchFrameException",
+                                            "NoSuchShadowRootException");
+                                    if (hit != null) {
+                                        category = FailureCategory.LOCATOR_NOT_FOUND;
+                                        evidence = simple(hit) + " in cause chain";
+                                    } else {
+                                        hit = firstMatch(chain, "TimeoutException");
+                                        if (hit != null) {
+                                            category = FailureCategory.TIMEOUT;
+                                            evidence = simple(hit) + " with no locator or navigation cause";
+                                        } else {
+                                            for (String c : chain) {
+                                                if (isAssertion(c)) {
+                                                    category = FailureCategory.ASSERTION_MISMATCH;
+                                                    evidence = simple(c) + " in cause chain";
+                                                    break;
+                                                }
+                                            }
+                                            if (category == null && haystack.contains("the following asserts failed")) {
+                                                category = FailureCategory.ASSERTION_MISMATCH;
+                                                evidence = "soft assertions failed";
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-        if (haystack.contains("the following asserts failed")) {
-            return result(FailureCategory.ASSERTION_MISMATCH, "soft assertions failed");
+
+        if (category == null) {
+            return unknown(outer != null ? "unrecognised " + simple(outer) : "unrecognised error");
         }
 
-        return unknown(outer != null ? "unrecognised " + simple(outer) : "unrecognised error");
+        FailureType type = category.defaultType();
+        String action = category.defaultAction();
+
+        if (status == TestStatus.PASSED_ON_RETRY || status == TestStatus.INTERMITTENT) {
+            type = FailureType.FLAKY;
+            action = "Test is non-deterministic (" + status.label().toLowerCase()
+                    + "). Replace arbitrary sleeps with explicit Locator waits and ensure tests do not share state.";
+        } else if (status == TestStatus.NEWLY_FAILING && category == FailureCategory.ASSERTION_MISMATCH) {
+            type = FailureType.PRODUCT_BUG;
+            action = "Newly failing assertion (passed in previous runs). Check recent application changes or deployments for a regression.";
+        } else if (category == FailureCategory.NAVIGATION_ERROR && evidence != null && evidence.startsWith("HTTP 5")) {
+            action = "Server returned an HTTP 5xx error. Inspect backend service logs and verify application server health.";
+        }
+
+        return result(category, type, evidence, action);
     }
 
     static List<String> causeChainOf(String stackTrace) {
@@ -143,11 +222,12 @@ public final class FailureClassifier {
         return i >= 0 ? className.substring(i + 1) : className;
     }
 
-    private static Result result(FailureCategory c, String evidence) {
-        return new Result(c, evidence.length() > EVIDENCE_MAX ? evidence.substring(0, EVIDENCE_MAX) + "…" : evidence);
+    private static Result result(FailureCategory c, FailureType type, String evidence, String action) {
+        String boundedEvidence = evidence.length() > EVIDENCE_MAX ? evidence.substring(0, EVIDENCE_MAX) + "…" : evidence;
+        return new Result(c, type, boundedEvidence, action);
     }
 
     private static Result unknown(String evidence) {
-        return new Result(FailureCategory.UNKNOWN, evidence);
+        return new Result(FailureCategory.UNKNOWN, FailureType.UNKNOWN, evidence, FailureCategory.UNKNOWN.defaultAction());
     }
 }

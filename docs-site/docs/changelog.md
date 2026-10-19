@@ -11,6 +11,8 @@ All notable changes to Selenium Boot are documented here.
 
 ## [Unreleased]
 
+- **Failure Intelligence: know why a test failed, with no API key** — bridges the gap from "a test failed" to "I know why and what to do", working out of the box on the first run with zero configuration and no AI or API key required. Every failure is classified into a high-level `FailureType` (`Product bug`, `Test bug`, `Environment`, `Flaky`, `Unknown`) with deterministic, context-aware remediation guidance ("Suggested Action") based on locator details, console errors, HTTP 5xx responses, and retry/history context. The HTML report surfaces color-coded type badges and prescriptive action banners; metrics JSON exports `failureType` and `suggestedAction`; and JUnit XML includes the classification tags and actions. Opt-in AI analysis (`ai.failureAnalysis: true`) is enriched with this baseline intelligence and prompts for structured root cause and fixes. Includes full user guide and documentation. (#138)
+
 - **AI provider is configurable** — `ai.provider` selects the backend for failure analysis and the run summary: `anthropic` (default, unchanged), `gemini`, or `openai` (any OpenAI-compatible `/chat/completions` endpoint — OpenAI, Azure, Groq, local Ollama via `ai.baseUrl`). `ai.model` now defaults per provider. Existing configs keep working with no change.
 
 - **AI run summary (opt-in)** — `ai.runSummary: true` adds one short paragraph to the HTML dashboard summarising the run's failures: which same-cause groups account for most of them, which look like product bugs versus test or environment problems, and what to check first. One API call per run, independent of `ai.failureAnalysis`; only grouped error messages and test names are sent (see the data note in the HTML report docs). Absent when disabled, when nothing failed, or on any error; the suite result is never affected. The text is exported as `aiRunSummary` in the metrics JSON.
@@ -35,13 +37,9 @@ All notable changes to Selenium Boot are documented here.
 
 - **Failure grouping** — the report's Failures tab now opens with a "N tests, same cause" panel: failed tests are grouped by a signature of category, exception type, normalised message (ids, numbers and quoted values stripped) and top application stack frame. The flat per-class list is unchanged below it. With `ai.failureAnalysis` on, one Claude call is made per group; the other tests in the group reuse its analysis. The metrics JSON gains `failureSignature`. (#140)
 
-- **`Locator` form actions: `clear()`, `check()`, `uncheck()`, `isChecked()`, `selectOption(text)`, `selectOptionByValue(value)`, `inputValue()`** — form controls can now be manipulated and inspected directly on `Locator` without falling back to `BasePage` helpers or raw `WebElement`s. `check()` and `uncheck()` are idempotent (no click if already in the target state), `isChecked()` queries checked state without waiting, and terminal actions (`clear`, `check`, `uncheck`, `selectOption`, `selectOptionByValue`, `inputValue`) auto-wait, re-resolving from scratch on every poll to survive stale or late-appearing elements. (#133)
-
----
-
-## [Unreleased]
-
 - **Failure classification** — every failed test is tagged with a category (`LOCATOR_NOT_FOUND`, `ELEMENT_NOT_INTERACTABLE`, `STALE_ELEMENT`, `TIMEOUT`, `ASSERTION_MISMATCH`, `NAVIGATION_ERROR`, `BROWSER_CRASH`, or `UNKNOWN`) and the evidence for it, from the exception class chain and message alone. No AI, no API key, no network. Shown as a badge in the HTML report's failure panel, as `failureCategory` / `failureEvidence` in the metrics JSON, and as the `type` of `<failure>` in the JUnit XML. The raw error and stack trace are unchanged. (#139)
+
+- **`Locator` form actions: `clear()`, `check()`, `uncheck()`, `isChecked()`, `selectOption(text)`, `selectOptionByValue(value)`, `inputValue()`** — form controls can now be manipulated and inspected directly on `Locator` without falling back to `BasePage` helpers or raw `WebElement`s. `check()` and `uncheck()` are idempotent (no click if already in the target state), `isChecked()` queries checked state without waiting, and terminal actions (`clear`, `check`, `uncheck`, `selectOption`, `selectOptionByValue`, `inputValue`) auto-wait, re-resolving from scratch on every poll to survive stale or late-appearing elements. (#133)
 
 ---
 

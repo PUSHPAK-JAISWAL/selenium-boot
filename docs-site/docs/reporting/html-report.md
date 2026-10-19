@@ -59,22 +59,25 @@ Same detail panels as Test Cases tab, but only for failed tests. Detail panels a
 
 ---
 
-## Failure classification
+## Failure classification & intelligence
 
-Each failed test is tagged with a category and the evidence for it, worked out from the exception class chain and message the framework already records. It needs no AI, no API key and no network. The badge and evidence appear at the top of the failure's detail panel; the raw error and stack trace stay right below.
+Each failed test is tagged with a high-level triage classification (`Product bug`, `Test bug`, `Environment`, `Flaky`), a fine-grained category, and the evidence for it, worked out from the exception class chain and message the framework already records. It also provides actionable remediation advice ("Action: ...") right out of the box with no AI, no API key, and no network. The triage badge, category, and action callout appear at the top of the failure's detail panel; the raw error and stack trace stay right below.
 
-| Category | Triggered by |
-|---|---|
-| `LOCATOR_NOT_FOUND` | `LocatorException`, `NoSuchElementException`, `NoSuchFrameException` or `NoSuchShadowRootException` anywhere in the cause chain, including a `LocatorException` caused by a `TimeoutException` |
-| `ELEMENT_NOT_INTERACTABLE` | `ElementNotInteractableException`, `ElementClickInterceptedException`, `InvalidElementStateException` |
-| `STALE_ELEMENT` | `StaleElementReferenceException` anywhere in the cause chain |
-| `TIMEOUT` | a `TimeoutException` with no locator or navigation cause |
-| `ASSERTION_MISMATCH` | the outermost error is an `AssertionError` (or TestNG/JUnit/`DbAssertException` equivalent), or soft assertions failed |
-| `NAVIGATION_ERROR` | `net::ERR_*`, DNS failures, "Timed out receiving message from renderer", page load timeouts, HTTP 5xx in the message |
-| `BROWSER_CRASH` | `NoSuchSessionException`, `UnreachableBrowserException`, "invalid session id", page crash |
-| `UNKNOWN` | none of the above. The classifier never guesses |
+| Classification | Category | Triggered by |
+|---|---|---|
+| `Product bug` | `ASSERTION_MISMATCH` | the outermost error is an `AssertionError` (or TestNG/JUnit/`DbAssertException` equivalent), or soft assertions failed |
+| `Test bug` | `LOCATOR_NOT_FOUND` | `LocatorException`, `NoSuchElementException`, `NoSuchFrameException` or `NoSuchShadowRootException` anywhere in the cause chain, including a `LocatorException` caused by a `TimeoutException` |
+| `Test bug` | `ELEMENT_NOT_INTERACTABLE` | `ElementNotInteractableException`, `ElementClickInterceptedException`, `InvalidElementStateException` |
+| `Test bug` | `STALE_ELEMENT` | `StaleElementReferenceException` anywhere in the cause chain |
+| `Environment` | `TIMEOUT` | a `TimeoutException` with no locator or navigation cause |
+| `Environment` | `NAVIGATION_ERROR` | `net::ERR_*`, DNS failures, "Timed out receiving message from renderer", page load timeouts, HTTP 5xx in the message |
+| `Environment` | `BROWSER_CRASH` | `NoSuchSessionException`, `UnreachableBrowserException`, "invalid session id", page crash |
+| `Flaky` | Any | When retried and passed (`Passed on retry`) or history indicates `Intermittent` execution |
+| `Unknown` | `UNKNOWN` | none of the above. The classifier never guesses |
 
-The category is also written to the metrics JSON as `failureCategory` and `failureEvidence`, and to the JUnit XML as the `type` of `<failure>`.
+The classification and action are also written to the metrics JSON as `failureType`, `failureCategory`, `failureEvidence`, and `suggestedAction`, and to the JUnit XML.
+
+For full architecture and design details, see [Failure Intelligence](../guides/failure-intelligence.md).
 
 ---
 

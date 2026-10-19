@@ -102,9 +102,13 @@ public final class JUnitXmlReporter {
                     xml.append(">\n");
                     com.seleniumboot.failure.FailureClassifier.Result why =
                             com.seleniumboot.failure.FailureClassifier.classify(t);
+                    String header = "[" + why.type().name() + " | " + why.category().name() + "] " + why.evidence();
+                    if (why.suggestedAction() != null && !why.suggestedAction().isBlank()) {
+                        header += "\nSuggested Action: " + why.suggestedAction();
+                    }
                     xml.append("    <failure message=\"").append(escapeXml(msg))
                        .append("\" type=\"").append(why.category().name()).append("\">")
-                       .append(escapeXml("[" + why.category().name() + "] " + why.evidence() + "\n" + trace))
+                       .append(escapeXml(header + "\n\n" + trace))
                        .append("</failure>\n");
                     xml.append("  </testcase>\n");
                     break;

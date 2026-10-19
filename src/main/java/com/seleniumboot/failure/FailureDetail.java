@@ -24,6 +24,8 @@ public final class FailureDetail {
     public static final int MAX_URL_LENGTH = 2_048;
     public static final int MAX_ITEMS = 10;
 
+    private final String failureType;
+    private final String suggestedAction;
     private final String failingLocator;
     private final String applicationFrame;
     private final String lastSuccessfulStep;
@@ -35,6 +37,8 @@ public final class FailureDetail {
     private final Map<String, Object> groupContext;
 
     private FailureDetail(
+            String failureType,
+            String suggestedAction,
             String failingLocator,
             String applicationFrame,
             String lastSuccessfulStep,
@@ -44,6 +48,8 @@ public final class FailureDetail {
             List<String> consoleErrors,
             String testStatus,
             Map<String, Object> groupContext) {
+        this.failureType = failureType;
+        this.suggestedAction = suggestedAction;
         this.failingLocator = failingLocator;
         this.applicationFrame = applicationFrame;
         this.lastSuccessfulStep = lastSuccessfulStep;
@@ -62,9 +68,18 @@ public final class FailureDetail {
             int groupSize,
             TestTiming representative) {
         if (timing == null) {
-            return new FailureDetail(null, null, null, null, null,
+            return new FailureDetail(null, null, null, null, null, null, null,
                     List.of(), List.of(), null, Map.of());
         }
+
+        FailureClassifier.Result classification =
+                (timing.getErrorMessage() != null || timing.getStackTrace() != null)
+                        ? FailureClassifier.classify(timing, status)
+                        : null;
+        String failureType = classification != null && classification.type() != FailureType.UNKNOWN
+                ? classification.type().name() : null;
+        String suggestedAction = classification != null && classification.category() != FailureCategory.UNKNOWN
+                ? classification.suggestedAction() : null;
 
         List<Map<String, String>> heals = new ArrayList<>();
         for (HealEvent event : limited(HealLog.getForTest(timing.getTestId()))) {
@@ -90,6 +105,8 @@ public final class FailureDetail {
         }
 
         return new FailureDetail(
+                bounded(failureType, MAX_TEXT_LENGTH),
+                bounded(suggestedAction, MAX_TEXT_LENGTH),
                 bounded(failingLocator(timing), MAX_TEXT_LENGTH),
                 bounded(applicationFrame(timing.getStackTrace()), MAX_TEXT_LENGTH),
                 bounded(lastSuccessfulStep(timing.getSteps()), MAX_TEXT_LENGTH),
@@ -99,6 +116,50 @@ public final class FailureDetail {
                 Collections.unmodifiableList(errors),
                 status != null ? status.name() : null,
                 Collections.unmodifiableMap(group));
+    }
+
+    public String getFailureType() {
+        return failureType;
+    }
+
+    public String getSuggestedAction() {
+        return suggestedAction;
+    }
+
+    public String getFailingLocator() {
+        return failingLocator;
+    }
+
+    public String getApplicationFrame() {
+        return applicationFrame;
+    }
+
+    public String getLastSuccessfulStep() {
+        return lastSuccessfulStep;
+    }
+
+    public String getPageUrl() {
+        return pageUrl;
+    }
+
+    public String getPageTitle() {
+        return pageTitle;
+    }
+
+    public List<Map<String, String>> getHealEvents() {
+        return healEvents;
+    }
+
+    public List<String> getConsoleErrors() {
+        return consoleErrors;
+    }
+
+    public String getTestStatus() {
+        return testStatus;
+    }
+
+    public Map<String, Object> getGroupContext() {
+        return groupContext;
     }
 
     private static String failingLocator(TestTiming timing) {
@@ -123,6 +184,8 @@ public final class FailureDetail {
     /** JSON-ready representation. Fields without data are deliberately absent. */
     public Map<String, Object> toMap() {
         Map<String, Object> values = new LinkedHashMap<>();
+        put(values, "failureType", failureType, MAX_TEXT_LENGTH);
+        put(values, "suggestedAction", suggestedAction, MAX_TEXT_LENGTH);
         put(values, "failingLocator", failingLocator, MAX_TEXT_LENGTH);
         put(values, "applicationFrame", applicationFrame, MAX_TEXT_LENGTH);
         put(values, "lastSuccessfulStep", lastSuccessfulStep, MAX_TEXT_LENGTH);
@@ -139,6 +202,8 @@ public final class FailureDetail {
     public void appendPrompt(StringBuilder prompt) {
         if (toMap().isEmpty()) return;
         prompt.append("\n## Failure Detail\n");
+        line(prompt, "Failure type", failureType);
+        line(prompt, "Suggested action", suggestedAction);
         line(prompt, "Failing locator", failingLocator);
         line(prompt, "Application frame", applicationFrame);
         line(prompt, "Last successful step", lastSuccessfulStep);
