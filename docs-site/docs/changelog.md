@@ -11,6 +11,8 @@ All notable changes to Selenium Boot are documented here.
 
 ## [Unreleased]
 
+- **HTML report: tab and failure fixes** — the report always opens on the Dashboard (it no longer restores the last-open tab), failure details start collapsed, and the Failures tab no longer goes empty after you expand or collapse a class in Test Cases (both tabs shared one group id).
+
 - **Failure Intelligence: know why a test failed, with no API key** — bridges the gap from "a test failed" to "I know why and what to do", working out of the box on the first run with zero configuration and no AI or API key required. Every failure is classified into a high-level `FailureType` (`Product bug`, `Test bug`, `Environment`, `Flaky`, `Unknown`) with deterministic, context-aware remediation guidance ("Suggested Action") based on locator details, console errors, HTTP 5xx responses, and retry/history context. The HTML report surfaces color-coded type badges and prescriptive action banners; metrics JSON exports `failureType` and `suggestedAction`; and JUnit XML includes the classification tags and actions. Opt-in AI analysis (`ai.failureAnalysis: true`) is enriched with this baseline intelligence and prompts for structured root cause and fixes. Includes full user guide and documentation. (#138)
 
 - **AI provider is configurable** — `ai.provider` selects the backend for failure analysis and the run summary: `anthropic` (default, unchanged), `gemini`, or `openai` (any OpenAI-compatible `/chat/completions` endpoint — OpenAI, Azure, Groq, local Ollama via `ai.baseUrl`). `ai.model` now defaults per provider. Existing configs keep working with no change.
