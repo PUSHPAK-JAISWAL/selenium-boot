@@ -42,7 +42,6 @@ Every item below is a real, scoped issue with acceptance criteria. Comment to cl
 
 **Failure Intelligence** (know why a test failed, with no API key; design in #138, fully implemented)
 
-- [#138](https://github.com/seleniumboot/selenium-boot/issues/138) Failure Intelligence: high-level classification & prescriptive remediation `completed`
 - [#139](https://github.com/seleniumboot/selenium-boot/issues/139) Rule-based failure classification `completed`
 - [#140](https://github.com/seleniumboot/selenium-boot/issues/140) Group failures by root cause in the report `completed`
 - [#141](https://github.com/seleniumboot/selenium-boot/issues/141) Retry- and history-aware failure status `completed`

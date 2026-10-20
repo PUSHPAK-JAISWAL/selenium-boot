@@ -63,6 +63,21 @@ public class FailureClassifierTest {
     }
 
     @Test
+    public void missingElement_withCapabilitiesDump_isLocatorNotFoundNotNavigationError() {
+        String msg = "no such element: Unable to locate element: {\"method\":\"css selector\",\"selector\":\"#does-not-exist\"}\n"
+                + "  (Session info: chrome=130.0.6723.70)\n"
+                + "Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 130.0.6723.70, pageLoadStrategy: normal, platformName: windows}";
+        String trace = "org.openqa.selenium.NoSuchElementException: " + msg + "\n"
+                + "\tat org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.createException(W3CHttpResponseCodec.java:200)\n"
+                + "\tat example.SearchTest.testMissingElement(SearchTest.java:42)";
+
+        FailureClassifier.Result r = FailureClassifier.classify(msg, trace);
+        Assert.assertEquals(r.category(), FailureCategory.LOCATOR_NOT_FOUND,
+                "NoSuchElementException must not be classified as Navigation error due to pageLoadStrategy in capabilities");
+        Assert.assertEquals(r.type(), com.seleniumboot.failure.FailureType.TEST_BUG);
+    }
+
+    @Test
     public void staleElement_isStale() {
         Assert.assertEquals(classify(new org.openqa.selenium.StaleElementReferenceException("stale")),
                 FailureCategory.STALE_ELEMENT);
@@ -150,7 +165,7 @@ public class FailureClassifierTest {
         Assert.assertEquals(result(new RuntimeException("net::ERR_NAME_NOT_RESOLVED")).type(),
                 com.seleniumboot.failure.FailureType.ENVIRONMENT);
         Assert.assertEquals(result(new org.openqa.selenium.TimeoutException("timeout")).type(),
-                com.seleniumboot.failure.FailureType.ENVIRONMENT);
+                com.seleniumboot.failure.FailureType.UNKNOWN);
         Assert.assertEquals(result(new RuntimeException("weird unrecognised error")).type(),
                 com.seleniumboot.failure.FailureType.UNKNOWN);
     }
@@ -160,11 +175,13 @@ public class FailureClassifierTest {
         FailureClassifier.Result r1 = FailureClassifier.classify("assertion failed", "AssertionError: boom",
                 com.seleniumboot.flakiness.TestStatus.PASSED_ON_RETRY);
         Assert.assertEquals(r1.type(), com.seleniumboot.failure.FailureType.FLAKY);
-        Assert.assertTrue(r1.suggestedAction().contains("non-deterministic"));
+        Assert.assertEquals(r1.displayLabel(), "Flaky (Assertion mismatch)");
+        Assert.assertTrue(r1.suggestedAction().contains("retry"));
 
         FailureClassifier.Result r2 = FailureClassifier.classify("timeout", "TimeoutException: boom",
                 com.seleniumboot.flakiness.TestStatus.INTERMITTENT);
         Assert.assertEquals(r2.type(), com.seleniumboot.failure.FailureType.FLAKY);
+        Assert.assertEquals(r2.displayLabel(), "Flaky (Timeout)");
     }
 
     @Test
@@ -173,7 +190,8 @@ public class FailureClassifierTest {
                 "java.lang.AssertionError: expected 10 but found 5",
                 com.seleniumboot.flakiness.TestStatus.NEWLY_FAILING);
         Assert.assertEquals(r.type(), com.seleniumboot.failure.FailureType.PRODUCT_BUG);
-        Assert.assertTrue(r.suggestedAction().contains("regression"), r.suggestedAction());
+        Assert.assertTrue(r.suggestedAction().contains("regressed") || r.suggestedAction().contains("expectation"),
+                r.suggestedAction());
     }
 
     @Test
@@ -206,5 +224,6 @@ public class FailureClassifierTest {
         FailureClassifier.Result r3 = new FailureClassifier.Result(FailureCategory.LOCATOR_NOT_FOUND,
                 com.seleniumboot.failure.FailureType.FLAKY, "evidence");
         Assert.assertEquals(r3.type(), com.seleniumboot.failure.FailureType.FLAKY);
+        Assert.assertEquals(r3.displayLabel(), "Flaky (Locator not found)");
     }
 }

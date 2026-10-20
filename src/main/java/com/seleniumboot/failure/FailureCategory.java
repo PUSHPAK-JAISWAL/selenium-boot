@@ -26,8 +26,8 @@ public enum FailureCategory {
         return switch (this) {
             case ASSERTION_MISMATCH -> FailureType.PRODUCT_BUG;
             case LOCATOR_NOT_FOUND, ELEMENT_NOT_INTERACTABLE, STALE_ELEMENT -> FailureType.TEST_BUG;
-            case NAVIGATION_ERROR, BROWSER_CRASH, TIMEOUT -> FailureType.ENVIRONMENT;
-            case UNKNOWN -> FailureType.UNKNOWN;
+            case NAVIGATION_ERROR, BROWSER_CRASH -> FailureType.ENVIRONMENT;
+            case TIMEOUT, UNKNOWN -> FailureType.UNKNOWN;
         };
     }
 

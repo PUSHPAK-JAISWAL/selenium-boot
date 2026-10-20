@@ -33,7 +33,7 @@ Every failed test is automatically classified into a high-level triage type:
 | **`Test bug`** | An issue in test code, selectors, or test sequencing. | `LocatorException`, `NoSuchElementException`, `ElementNotInteractableException`, `StaleElementReferenceException`. |
 | **`Environment`** | Infrastructure, network, browser, or backend server outage. | `NoSuchSessionException`, `UnreachableBrowserException`, `net::ERR_*`, DNS failures, HTTP 5xx errors. |
 | **`Flaky`** | Non-deterministic test outcome due to timing or shared state. | Passed on retry, or marked `INTERMITTENT` based on run history. |
-| **`Unknown`** | Unrecognised or unexpected exception. Raw stack trace is preserved. | Any unmapped exception. The classifier never guesses. |
+| **`Unknown`** | Unrecognised or unexpected exception, or generic timeout. Raw stack trace is preserved. | `TimeoutException` with no locator or navigation cause, or any unmapped exception. The classifier never guesses. |
 
 Shown as a color-coded badge (`[Product bug]`, `[Test bug]`, `[Environment]`, `[Flaky]`) in the HTML report and exported as `failureType` in `selenium-boot-metrics.json`.
 
@@ -63,10 +63,10 @@ Failure Intelligence does not just report *why* a test failed — it provides pr
 - **Locator not found**: Names the exact failing locator when available and recommends checking if the selector changed, or if the element is inside an iframe, shadow DOM, or delayed by async loading.
 - **Element not interactable**: Identifies whether the element is covered by an overlay/modal, disabled, or outside the viewport, recommending scroll or modal dismissal.
 - **Stale element**: Recommends using dynamic `$(...)` locators which auto-wait and re-resolve instead of holding cached `WebElement` references.
-- **Assertion mismatch**: Highlights expected vs. actual values and advises checking whether product requirements changed or the test assertion is outdated.
+- **Assertion mismatch**: Highlights expected vs. actual values. When newly failing, it advises verifying whether the application regressed or if requirements changed and test expectations need updating.
 - **Navigation error (HTTP 5xx)**: Instructs checking backend service health, database connectivity, and `execution.baseUrl`.
 - **Browser crash**: Suggests reviewing driver binary compatibility, memory limits, and container resource limits.
-- **Flaky**: Recommends replacing arbitrary thread sleeps with explicit `Locator` condition waits and isolating test state.
+- **Flaky**: Preserves the underlying failure category (e.g. `Flaky (Locator not found)`) so you know what caused the flake, and recommends replacing arbitrary thread sleeps with explicit `Locator` waits and isolating test state.
 
 The remediation guidance appears in an **Action** callout box in the HTML report and is exported as `suggestedAction` in metrics.
 

@@ -69,10 +69,10 @@ Each failed test is tagged with a high-level triage classification (`Product bug
 | `Test bug` | `LOCATOR_NOT_FOUND` | `LocatorException`, `NoSuchElementException`, `NoSuchFrameException` or `NoSuchShadowRootException` anywhere in the cause chain, including a `LocatorException` caused by a `TimeoutException` |
 | `Test bug` | `ELEMENT_NOT_INTERACTABLE` | `ElementNotInteractableException`, `ElementClickInterceptedException`, `InvalidElementStateException` |
 | `Test bug` | `STALE_ELEMENT` | `StaleElementReferenceException` anywhere in the cause chain |
-| `Environment` | `TIMEOUT` | a `TimeoutException` with no locator or navigation cause |
+| `Unknown` | `TIMEOUT` | a `TimeoutException` with no locator or navigation cause |
 | `Environment` | `NAVIGATION_ERROR` | `net::ERR_*`, DNS failures, "Timed out receiving message from renderer", page load timeouts, HTTP 5xx in the message |
 | `Environment` | `BROWSER_CRASH` | `NoSuchSessionException`, `UnreachableBrowserException`, "invalid session id", page crash |
-| `Flaky` | Any | When retried and passed (`Passed on retry`) or history indicates `Intermittent` execution |
+| `Flaky (Category)` | Any | When retried and passed (`Passed on retry`) or history indicates `Intermittent` execution. Retains the underlying category (e.g. `Flaky (Locator not found)`) |
 | `Unknown` | `UNKNOWN` | none of the above. The classifier never guesses |
 
 The classification and action are also written to the metrics JSON as `failureType`, `failureCategory`, `failureEvidence`, and `suggestedAction`, and to the JUnit XML.

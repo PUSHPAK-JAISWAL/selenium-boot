@@ -450,7 +450,12 @@ public final class HtmlReportGenerator {
             String type = test.get("failureType").asText();
             String typeLabel;
             try {
-                typeLabel = com.seleniumboot.failure.FailureType.valueOf(type).label();
+                com.seleniumboot.failure.FailureType ft = com.seleniumboot.failure.FailureType.valueOf(type);
+                if (ft == com.seleniumboot.failure.FailureType.FLAKY && !label.equalsIgnoreCase("Unknown")) {
+                    typeLabel = "Flaky (" + label + ")";
+                } else {
+                    typeLabel = ft.label();
+                }
             } catch (IllegalArgumentException e) {
                 typeLabel = type;
             }
@@ -462,7 +467,10 @@ public final class HtmlReportGenerator {
             actionHtml = "<div class=\"failure-action\"><strong>Action:</strong> "
                     + escapeHtml(test.get("suggestedAction").asText()) + "</div>";
         }
-        return "<div class=\"failure-why\">" + typeBadge + "<span class=\"failure-badge\">" + escapeHtml(label) + "</span>"
+        String categoryBadge = typeBadge.contains("(" + escapeHtml(label) + ")")
+                ? ""
+                : "<span class=\"failure-badge\">" + escapeHtml(label) + "</span>";
+        return "<div class=\"failure-why\">" + typeBadge + categoryBadge
                 + escapeHtml(evidence) + "</div>" + actionHtml;
     }
 

@@ -22,5 +22,8 @@ public enum FailureType {
     public String label() {
         return label;
     }
-}
 
+    public String displayName() {
+        return label;
+    }
+}
