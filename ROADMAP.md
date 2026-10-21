@@ -40,12 +40,12 @@ Every item below is a real, scoped issue with acceptance criteria. Comment to cl
 - [#136](https://github.com/seleniumboot/selenium-boot/issues/136) Assertions: `isFocused`, `isEmpty`, regex overloads `help wanted`
 - [#137](https://github.com/seleniumboot/selenium-boot/issues/137) Failed tests and trace links in the GitHub Actions job summary `help wanted`
 
-**Failure Intelligence** (know why a test failed, with no API key; design in #138, fully implemented)
+**Failure Intelligence** (know why a test failed, with no API key; design in #138, build in this order)
 
-- [#139](https://github.com/seleniumboot/selenium-boot/issues/139) Rule-based failure classification `completed`
-- [#140](https://github.com/seleniumboot/selenium-boot/issues/140) Group failures by root cause in the report `completed`
-- [#141](https://github.com/seleniumboot/selenium-boot/issues/141) Retry- and history-aware failure status `completed`
-- [#142](https://github.com/seleniumboot/selenium-boot/issues/142) Richer context for AI failure analysis `completed`
+- [#139](https://github.com/seleniumboot/selenium-boot/issues/139) Rule-based failure classification `help wanted`
+- [#140](https://github.com/seleniumboot/selenium-boot/issues/140) Group failures by root cause in the report `help wanted`
+- [#141](https://github.com/seleniumboot/selenium-boot/issues/141) Retry- and history-aware failure status `help wanted`
+- [#142](https://github.com/seleniumboot/selenium-boot/issues/142) Richer context for AI failure analysis `help wanted`
 
 **Design discussion**
 
@@ -53,7 +53,7 @@ Every item below is a real, scoped issue with acceptance criteria. Comment to cl
 
 ### Already done (don't duplicate)
 
-Failure Intelligence (design in #138: rule-based `FailureType` classification, actionable remediation, root cause grouping #140, retry & history status #141, bounded failure detail records #142) · Per-page SEO descriptions · Why pages (Selenium Boot / plain Selenium / Playwright) · six recipes (upload, download PDF, iframes, Shadow DOM, drag & drop, new windows) · migration guides (Selenium+TestNG, WebDriverManager, Playwright) · homepage before/after · Edge and Safari local browsers.
+Per-page SEO descriptions · Why pages (Selenium Boot / plain Selenium / Playwright) · six recipes (upload, download PDF, iframes, Shadow DOM, drag & drop, new windows) · migration guides (Selenium+TestNG, WebDriverManager, Playwright) · homepage before/after · Edge and Safari local browsers.
 
 ### Ongoing
 

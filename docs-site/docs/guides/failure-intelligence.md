@@ -100,7 +100,7 @@ Failures are compared against the test's recent history in `target/metrics-histo
 When you configure an LLM API key (`ai.apiKey`), Selenium Boot passes the structured Failure Detail record (including rule-based classification, failing locator, console errors, self-healing events, and same-cause group context) to the model.
 
 Crucially:
-- **Tests in the same-cause group share one AI call**, reducing API costs by 90%+.
+- **Tests in the same-cause group share one AI call**, so you make far fewer AI calls.
 - **AI output adheres to the framework's classification taxonomy**:
   ```markdown
   **Classification:** (Product Bug | Test Bug | Environment | Flaky)
