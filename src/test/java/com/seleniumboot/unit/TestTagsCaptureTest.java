@@ -3,6 +3,8 @@ package com.seleniumboot.unit;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seleniumboot.cucumber.CucumberHooks;
+import com.seleniumboot.driver.DriverManager;
+import org.mockito.MockedStatic;
 import com.seleniumboot.junit5.SeleniumBootExtension;
 import com.seleniumboot.listeners.TestExecutionListener;
 import com.seleniumboot.metrics.ExecutionMetrics;
@@ -35,6 +37,7 @@ public class TestTagsCaptureTest {
     @AfterMethod
     public void cleanup() {
         ExecutionMetrics.reset();
+        try { DriverManager.quitDriver(); } catch (Exception ignored) {}
     }
 
     @Test
@@ -96,10 +99,9 @@ public class TestTagsCaptureTest {
         when(scenario.getLine()).thenReturn(15);
         when(scenario.getSourceTagNames()).thenReturn(Arrays.asList("@smoke", "@checkout", "fast"));
 
-        try {
+        try (MockedStatic<DriverManager> mocked = Mockito.mockStatic(DriverManager.class)) {
             hooks.beforeScenario(scenario);
         } catch (Exception ignored) {
-            // driver creation might fail in unit test environment, but tags are captured before driver creation
         }
 
         String testId = "checkout.feature#Order item[L15]";
@@ -118,7 +120,7 @@ public class TestTagsCaptureTest {
         when(context.getDisplayName()).thenReturn("dummyMethod()");
         when(context.getTags()).thenReturn(Set.of("junit5-tag", "@annotated-tag"));
 
-        try {
+        try (MockedStatic<DriverManager> mocked = Mockito.mockStatic(DriverManager.class)) {
             extension.beforeEach(context);
         } catch (Exception ignored) {}
 

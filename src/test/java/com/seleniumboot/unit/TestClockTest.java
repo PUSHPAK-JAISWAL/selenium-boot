@@ -1,7 +1,9 @@
 package com.seleniumboot.unit;
 
 import com.seleniumboot.clock.TestClock;
+import com.seleniumboot.driver.DriverManager;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
@@ -15,10 +17,12 @@ import static org.testng.Assert.*;
  */
 public class TestClockTest {
 
+    @BeforeMethod
     @AfterMethod
     public void cleanup() {
         // Ensure no leftover mock time leaks between tests
         try { TestClock.autoReset(); } catch (Exception ignored) {}
+        try { DriverManager.quitDriver(); } catch (Exception ignored) {}
     }
 
     // ── factory ───────────────────────────────────────────────────────────
