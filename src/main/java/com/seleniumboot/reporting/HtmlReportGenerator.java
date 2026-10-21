@@ -427,9 +427,9 @@ public final class HtmlReportGenerator {
                 if (tag.isEmpty()) continue;
                 if (tagDataAttr.length() > 0) tagDataAttr.append(",");
                 tagDataAttr.append(escapeHtml(tag.toLowerCase()));
-                tagChips.append("<span class=\"tag-chip\" onclick=\"filterByTag('")
+                tagChips.append("<span class=\"tag-chip\" data-tag=\"")
                         .append(escapeHtml(tag))
-                        .append("', event)\" title=\"Filter by tag: ")
+                        .append("\" onclick=\"filterByTag(this.dataset.tag, event)\" title=\"Filter by tag: ")
                         .append(escapeHtml(tag))
                         .append("\">")
                         .append(escapeHtml(tag))
@@ -980,9 +980,9 @@ public final class HtmlReportGenerator {
 
             sb.append("          <tr>\n")
               .append("            <td>\n")
-              .append("              <span class=\"tag-chip\" onclick=\"filterByTag('")
+              .append("              <span class=\"tag-chip\" data-tag=\"")
               .append(escapedTag)
-              .append("', event)\" title=\"Filter by tag: ")
+              .append("\" onclick=\"filterByTag(this.dataset.tag, event)\" title=\"Filter by tag: ")
               .append(escapedTag)
               .append("\">")
               .append(escapedTag)

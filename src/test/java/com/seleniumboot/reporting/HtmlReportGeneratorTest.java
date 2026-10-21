@@ -206,11 +206,12 @@ public class HtmlReportGeneratorTest {
         assertTrue(reportHtml.contains("2 tags"), "two unique tags: auth and smoke");
 
         // 2. Auth tag stats: 2 total, 1 passed, 1 failed -> 50.0%
-        assertTrue(reportHtml.contains("filterByTag('auth', event)"));
+        assertTrue(reportHtml.contains("data-tag=\"auth\""));
+        assertTrue(reportHtml.contains("onclick=\"filterByTag(this.dataset.tag, event)\""));
         assertTrue(reportHtml.contains("50.0%"));
 
         // 3. Smoke tag stats: 2 total, 2 passed -> 100.0%
-        assertTrue(reportHtml.contains("filterByTag('smoke', event)"));
+        assertTrue(reportHtml.contains("data-tag=\"smoke\""));
         assertTrue(reportHtml.contains("100.0%"));
 
         // 4. Test Cases table rows have data-tags and chips
@@ -221,5 +222,36 @@ public class HtmlReportGeneratorTest {
 
         // 5. Active tag filter pill is present in the markup
         assertTrue(reportHtml.contains("id=\"activeTagPill\""));
+    }
+
+
+    @Test
+    public void buildHtml_tagWithQuote_renderedSafelyWithDataTag() throws Exception {
+        String json = """
+        {
+            "totals": { "total": 1, "passed": 1, "failed": 0, "skipped": 0 },
+            "tests": [
+                {
+                    "testId": "com.example.SpecialTagTest.testQuoteTag",
+                    "testClassName": "SpecialTagTest",
+                    "status": "PASSED",
+                    "tags": ["it's", "x');alert(1);//"],
+                    "testLogicMs": 100,
+                    "totalMs": 120
+                }
+            ]
+        }
+        """;
+        JsonNode root = new ObjectMapper().readTree(json);
+        String reportHtml = HtmlReportGenerator.buildHtml(root);
+
+        // Tags with quotes and injection payloads must be safely placed in data-tag attribute
+        assertTrue(reportHtml.contains("data-tag=\"it's\""), "tag with quote must be safely in data-tag");
+        assertTrue(reportHtml.contains("data-tag=\"x');alert(1);//\""), "tag with JS payload must be safely in data-tag");
+        assertTrue(reportHtml.contains("onclick=\"filterByTag(this.dataset.tag, event)\""));
+
+        // Must NOT interpolate quotes into inline JavaScript calls
+        assertFalse(reportHtml.contains("filterByTag('it's'"));
+        assertFalse(reportHtml.contains("filterByTag('x');alert(1);//'"));
     }
 }
