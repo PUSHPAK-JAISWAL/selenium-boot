@@ -446,6 +446,10 @@
                     <div class="card-header">Suite Duration Trend (s)</div>
                     <div class="card-body"><canvas id="trendTimeChart"></canvas></div>
                 </div>
+                <div class="card chart-card">
+                    <div class="card-header">Flaky Test Trend</div>
+                    <div class="card-body"><canvas id="trendFlakyChart"></canvas></div>
+                </div>
             </div>
 
             <!-- Retry summary -->
@@ -609,6 +613,7 @@ if (window.Chart && trendData.length >= 2) {
     });
     line('trendRateChart', 'Pass rate (%)', trendData.map(r => r.passRate), '#43a047', 100);
     line('trendTimeChart', 'Duration (s)', trendData.map(r => r.durationSec), '#303f9f');
+    line('trendFlakyChart', 'Flaky tests', trendData.map(r => r.flakyTests), '#f57c00');
 }
 
 // ── Collapse / expand class groups ──

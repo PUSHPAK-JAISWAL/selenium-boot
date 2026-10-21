@@ -185,6 +185,7 @@ public final class HtmlReportGenerator {
                         : name);
                 run.put("passRate", n.path("passRate").asDouble(0));
                 run.put("failed", n.path("failedTests").asInt(0));
+                run.put("flakyTests", n.path("flakyTests").asInt(0));
                 long ms = n.path("suiteDurationMs").asLong(0);
                 run.put("durationSec", Math.round((ms > 0 ? ms : n.path("totalTimeMs").asLong(0)) / 100.0) / 10.0);
             } catch (Exception ignored) {

@@ -109,7 +109,7 @@ public class HtmlReportGeneratorTest {
         try {
             for (int i = 1; i <= 3; i++) {
                 java.nio.file.Files.writeString(dir.resolve("selenium-boot-metrics-2026101" + i + "-10300" + i + ".json"),
-                        "{\"passRate\":" + (i * 30) + ".0,\"failedTests\":" + i + ",\"suiteDurationMs\":" + (i * 2000) + "}");
+                        "{\"passRate\":" + (i * 30) + ".0,\"failedTests\":" + i + ",\"flakyTests\":" + i + ",\"suiteDurationMs\":" + (i * 2000) + "}");
             }
             java.nio.file.Files.writeString(dir.resolve("selenium-boot-metrics-20261019-103000.json"), "not json");
 
@@ -117,11 +117,14 @@ public class HtmlReportGeneratorTest {
             assertEquals(trend.size(), 1, "last 2 files taken, the unreadable one skipped");
             assertEquals(trend.get(0).get("passRate").asDouble(), 90.0);
             assertEquals(trend.get(0).get("durationSec").asDouble(), 6.0);
+            assertEquals(trend.get(0).get("flakyTests").asInt(), 3, "flakyTests carried into trend entry");
             assertEquals(trend.get(0).get("label").asText(), "10-13 10:30");
 
             JsonNode all = new ObjectMapper().readTree(HtmlReportGenerator.buildTrendData(20));
             assertEquals(all.size(), 3);
             assertEquals(all.get(0).get("passRate").asDouble(), 30.0, "oldest first");
+            assertEquals(all.get(0).get("flakyTests").asInt(), 1, "flakyTests on oldest run");
+            assertEquals(all.get(2).get("flakyTests").asInt(), 3, "flakyTests on newest run");
         } finally {
             System.clearProperty("seleniumboot.history.dir");
         }
