@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Unreleased
 
+- **Results by Tag (TestNG groups, Cucumber tags, JUnit 5 @Tag)** — capture test tags across TestNG groups, Cucumber scenario tags, and JUnit 5 `@Tag`, export them in `selenium-boot-metrics.json`, and render a "Results by Tag" card (passed/failed/skipped/pass rate per tag), tag chips on test table rows, and interactive click-to-filter in the HTML report. Absent when no tests have tags. (#167)
+
 - **HTML report: tab and failure fixes** — the report always opens on the Dashboard (it no longer restores the last-open tab), failure details start collapsed, and the Failures tab no longer goes empty after you expand or collapse a class in Test Cases (both tabs shared one group id).
 
 - **Failure Intelligence: high-level triage and suggested actions** — each failure is classified as `Product bug`, `Test bug`, `Environment`, `Flaky` or `Unknown` (flaky keeps its cause, e.g. `Flaky (Locator not found)`), with a rule-based suggested action. Shown in the HTML report, as `failureType` / `suggestedAction` in the metrics JSON, and in the JUnit XML; opt-in AI analysis uses it as a baseline. No API key needed. (#138)

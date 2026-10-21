@@ -115,6 +115,11 @@ public class AllureReportAdapter implements ReportAdapter {
         if (test.path("retryCount").asInt(0) > 0) {
             addLabel(labels, "flaky", "true");
         }
+        if (test.has("tags")) {
+            for (JsonNode tagNode : test.path("tags")) {
+                addLabel(labels, "tag", tagNode.asText());
+            }
+        }
 
         // Steps
         ArrayNode stepsNode = result.putArray("steps");

@@ -74,6 +74,10 @@ public final class TestExecutionListener implements ITestListener {
         ExecutionMetrics.markStart(testId);
         ExecutionMetrics.recordTestClass(testId, result.getTestClass().getRealClass().getSimpleName());
         ExecutionMetrics.recordDescription(testId, result.getMethod().getDescription());
+        String[] groups = result.getMethod().getGroups();
+        if (groups != null && groups.length > 0) {
+            ExecutionMetrics.recordTags(testId, java.util.Arrays.asList(groups));
+        }
         // Set browser override BEFORE creating driver so DriverProviderFactory can read it
         String browserOverride = result.getTestContext().getCurrentXmlTest()
                 .getParameter("selenium.boot.browser");
@@ -211,6 +215,10 @@ public final class TestExecutionListener implements ITestListener {
     public void onTestSkipped(ITestResult result) {
         if (isCucumberScenario(result)) return;
         String testId = result.getMethod().getQualifiedName();
+        String[] groups = result.getMethod().getGroups();
+        if (groups != null && groups.length > 0) {
+            ExecutionMetrics.recordTags(testId, java.util.Arrays.asList(groups));
+        }
         ExecutionMetrics.recordStatus(testId, "SKIPPED");
         ExecutionMetrics.markEnd(testId);
         HookRegistry.onTestEnd(testId, "SKIPPED");

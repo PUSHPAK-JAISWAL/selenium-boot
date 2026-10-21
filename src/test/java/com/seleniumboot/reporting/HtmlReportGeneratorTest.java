@@ -152,4 +152,74 @@ public class HtmlReportGeneratorTest {
         assertTrue(html.contains("AI Run Summary"));
         assertTrue(html.contains("Most failures share &lt;b&gt;one&lt;/b&gt; cause."), "summary text is HTML-escaped");
     }
+
+    @Test
+    public void resultsByTag_omittedWhenNoTags() throws Exception {
+        String reportHtml = html(3, 0);
+        assertFalse(reportHtml.contains("<span>Results by Tag</span>"), "card must be omitted when no tests have tags");
+        assertFalse(reportHtml.contains("id=\"tagResultsCard\""));
+    }
+
+    @Test
+    public void resultsByTag_renderedWhenTagsPresent() throws Exception {
+        String json = """
+{
+            "totalTests": 3,
+            "passedTests": 2,
+            "failedTests": 1,
+            "skippedTests": 0,
+            "passRate": 66.7,
+            "tests": [
+                {
+                    "testId": "com.example.LoginTest.validLogin",
+                    "testClassName": "LoginTest",
+                    "status": "PASSED",
+                    "tags": ["smoke", "auth"],
+                    "testLogicMs": 100,
+                    "totalMs": 150
+                },
+                {
+                    "testId": "com.example.LoginTest.invalidLogin",
+                    "testClassName": "LoginTest",
+                    "status": "FAILED",
+                    "tags": ["auth"],
+                    "testLogicMs": 200,
+                    "totalMs": 250,
+                    "errorMessage": "login failed"
+                },
+                {
+                    "testId": "com.example.CheckoutTest.placeOrder",
+                    "testClassName": "CheckoutTest",
+                    "status": "PASSED",
+                    "tags": ["smoke"],
+                    "testLogicMs": 300,
+                    "totalMs": 350
+                }
+            ]
+        }""";
+        JsonNode root = new ObjectMapper().readTree(json);
+        String reportHtml = HtmlReportGenerator.buildHtml(root);
+
+        // 1. Dashboard Results by Tag card
+        assertTrue(reportHtml.contains("id=\"tagResultsCard\""), "tag results card must be present");
+        assertTrue(reportHtml.contains("Results by Tag"));
+        assertTrue(reportHtml.contains("2 tags"), "two unique tags: auth and smoke");
+
+        // 2. Auth tag stats: 2 total, 1 passed, 1 failed -> 50.0%
+        assertTrue(reportHtml.contains("filterByTag('auth', event)"));
+        assertTrue(reportHtml.contains("50.0%"));
+
+        // 3. Smoke tag stats: 2 total, 2 passed -> 100.0%
+        assertTrue(reportHtml.contains("filterByTag('smoke', event)"));
+        assertTrue(reportHtml.contains("100.0%"));
+
+        // 4. Test Cases table rows have data-tags and chips
+        assertTrue(reportHtml.contains("data-tags=\"smoke,auth\""));
+        assertTrue(reportHtml.contains("data-tags=\"auth\""));
+        assertTrue(reportHtml.contains("data-tags=\"smoke\""));
+        assertTrue(reportHtml.contains("class=\"tag-chip\""));
+
+        // 5. Active tag filter pill is present in the markup
+        assertTrue(reportHtml.contains("id=\"activeTagPill\""));
+    }
 }

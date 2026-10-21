@@ -230,6 +230,56 @@ public class ExecutionMetricsTest {
     }
 
     // ----------------------------------------------------------
+    // recordTags & tags export
+    // ----------------------------------------------------------
+
+    @Test
+    public void recordTags_normalizesAtPrefix_andDeduplicates() {
+        ExecutionMetrics.markStart("tag-test-1");
+        ExecutionMetrics.markEnd("tag-test-1");
+        ExecutionMetrics.recordTags("tag-test-1", List.of("@smoke", "smoke", "@regression", "  @fast  ", ""));
+
+        TestTiming t = ExecutionMetrics.getTiming("tag-test-1");
+        assertNotNull(t);
+        List<String> tags = t.getTags();
+        assertEquals(tags.size(), 3);
+        assertEquals(tags, List.of("smoke", "regression", "fast"));
+    }
+
+    @Test
+    public void exportToJson_includesTagsField() throws IOException {
+        ExecutionMetrics.markStart("tag-test-2");
+        ExecutionMetrics.markEnd("tag-test-2");
+        ExecutionMetrics.recordStatus("tag-test-2", "PASSED");
+        ExecutionMetrics.recordTags("tag-test-2", List.of("smoke", "checkout"));
+        ExecutionMetrics.exportToJson();
+
+        com.fasterxml.jackson.databind.JsonNode root = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(new File("target/selenium-boot-metrics.json"));
+        com.fasterxml.jackson.databind.JsonNode tests = root.path("tests");
+        assertEquals(tests.size(), 1);
+        com.fasterxml.jackson.databind.JsonNode testTags = tests.get(0).path("tags");
+        assertTrue(testTags.isArray());
+        assertEquals(testTags.size(), 2);
+        assertEquals(testTags.get(0).asText(), "smoke");
+        assertEquals(testTags.get(1).asText(), "checkout");
+    }
+
+    @Test
+    public void exportToJson_emptyTags_outputsEmptyArray() throws IOException {
+        ExecutionMetrics.markStart("tag-test-3");
+        ExecutionMetrics.markEnd("tag-test-3");
+        ExecutionMetrics.recordStatus("tag-test-3", "PASSED");
+        ExecutionMetrics.exportToJson();
+
+        com.fasterxml.jackson.databind.JsonNode root = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(new File("target/selenium-boot-metrics.json"));
+        com.fasterxml.jackson.databind.JsonNode testTags = root.path("tests").get(0).path("tags");
+        assertTrue(testTags.isArray());
+        assertEquals(testTags.size(), 0);
+    }
+
+    // ----------------------------------------------------------
     // reset
     // ----------------------------------------------------------
 

@@ -268,6 +268,7 @@ public final class HtmlReportGenerator {
                 : "";
         String retrySection     = buildRetrySection(flakyTests, recoveredTests);
         String slowestSection   = tests != null ? buildSlowestTests(tests) : "";
+        String tagResults       = tests != null ? buildTagResultsSection(tests) : "";
         String flakinessSection = buildFlakinessSection() + buildTestStatusSection(tests);
         String failureRows    = buildFailureRows(tests, isMatrixRun);
         String failureGroups  = buildFailureGroups(tests);
@@ -299,6 +300,7 @@ public final class HtmlReportGenerator {
                 .replace("{{AI_RUN_SUMMARY}}", aiRunSummary)
                 .replace("{{RETRY_SECTION}}", retrySection)
                 .replace("{{SLOWEST_TESTS}}", slowestSection)
+                .replace("{{TAG_RESULTS}}", tagResults)
                 .replace("{{FLAKINESS_SECTION}}", flakinessSection)
                 .replace("{{DONUT_DATA}}", donutData)
                 .replace("{{TREND_DATA}}", buildTrendData(20))
@@ -417,6 +419,34 @@ public final class HtmlReportGenerator {
         String memberStyle = collapsed ? " style=\"display:none\"" : "";
         String iconOpen    = (!detailHidden && hasDetail) ? " open" : "";
 
+        StringBuilder tagChips = new StringBuilder();
+        StringBuilder tagDataAttr = new StringBuilder();
+        if (test.has("tags") && test.get("tags").isArray()) {
+            for (JsonNode tagNode : test.get("tags")) {
+                String tag = tagNode.asText().trim();
+                if (tag.isEmpty()) continue;
+                if (tagDataAttr.length() > 0) tagDataAttr.append(",");
+                tagDataAttr.append(escapeHtml(tag.toLowerCase()));
+                tagChips.append("<span class=\"tag-chip\" onclick=\"filterByTag('")
+                        .append(escapeHtml(tag))
+                        .append("', event)\" title=\"Filter by tag: ")
+                        .append(escapeHtml(tag))
+                        .append("\">")
+                        .append(escapeHtml(tag))
+                        .append("</span>");
+            }
+        }
+
+        String testCellContent;
+        if (tagChips.length() > 0) {
+            testCellContent = "<div class=\"test-name-cell\">"
+                    + "<div class=\"test-name-line\">" + retryBadge + healedBadge + methodName + "</div>"
+                    + "<div class=\"tag-chips-wrap\">" + tagChips + "</div>"
+                    + "</div>";
+        } else {
+            testCellContent = retryBadge + healedBadge + methodName;
+        }
+
         String browserCell = showBrowser ? "<td class=\"browser-cell\">" + escapeHtml(browser) + "</td>" : "";
 
         return "<tr class=\"" + rowClass + "\""
@@ -424,8 +454,9 @@ public final class HtmlReportGenerator {
                 + memberStyle
                 + " data-group=\"" + groupKey + "\""
                 + " data-status=\"" + status + "\""
+                + " data-tags=\"" + tagDataAttr + "\""
                 + " data-test=\"" + methodName.toLowerCase() + "\">"
-                + "<td class=\"test-id\">" + retryBadge + healedBadge + methodName + "</td>"
+                + "<td class=\"test-id\">" + testCellContent + "</td>"
                 + "<td class=\"desc-cell\">" + description + "</td>"
                 + browserCell
                 + "<td><span class=\"status-badge " + statusClass + "\">" + status + "</span></td>"
@@ -877,6 +908,102 @@ public final class HtmlReportGenerator {
               .append(thumbHtml)
               .append("</div>");
         }
+        return sb.toString();
+    }
+
+
+    private static class TagStat {
+        int total = 0;
+        int passed = 0;
+        int failed = 0;
+        int skipped = 0;
+    }
+
+    private static String buildTagResultsSection(JsonNode tests) {
+        if (tests == null) return "";
+        java.util.Map<String, TagStat> statsMap = new java.util.LinkedHashMap<>();
+        for (JsonNode test : tests) {
+            if (!test.has("tags") || !test.get("tags").isArray()) continue;
+            String status = test.has("status") ? test.get("status").asText() : "UNKNOWN";
+            for (JsonNode tagNode : test.get("tags")) {
+                String tag = tagNode.asText().trim();
+                if (tag.isEmpty()) continue;
+                TagStat stat = statsMap.computeIfAbsent(tag, k -> new TagStat());
+                stat.total++;
+                if ("PASSED".equalsIgnoreCase(status)) stat.passed++;
+                else if ("FAILED".equalsIgnoreCase(status)) stat.failed++;
+                else if ("SKIPPED".equalsIgnoreCase(status)) stat.skipped++;
+            }
+        }
+        if (statsMap.isEmpty()) return "";
+
+        java.util.List<String> sortedTags = new java.util.ArrayList<>(statsMap.keySet());
+        sortedTags.sort(String.CASE_INSENSITIVE_ORDER);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div class=\"card section-mb\" id=\"tagResultsCard\">\n")
+          .append("  <div class=\"card-header\" style=\"display:flex;justify-content:space-between;align-items:center;\">\n")
+          .append("    <span>Results by Tag</span>\n")
+          .append("    <span class=\"group-count\">").append(sortedTags.size())
+          .append(" tag").append(sortedTags.size() != 1 ? "s" : "").append("</span>\n")
+          .append("  </div>\n")
+          .append("  <div class=\"card-body\" style=\"padding:16px 24px;\">\n")
+          .append("    <div class=\"table-wrap\">\n")
+          .append("      <table class=\"tag-summary-table\">\n")
+          .append("        <thead>\n")
+          .append("          <tr>\n")
+          .append("            <th>Tag</th>\n")
+          .append("            <th>Total</th>\n")
+          .append("            <th>Passed</th>\n")
+          .append("            <th>Failed</th>\n")
+          .append("            <th>Skipped</th>\n")
+          .append("            <th>Pass Rate</th>\n")
+          .append("          </tr>\n")
+          .append("        </thead>\n")
+          .append("        <tbody>\n");
+
+        for (String tag : sortedTags) {
+            TagStat stat = statsMap.get(tag);
+            double rate = stat.total == 0 ? 0.0 : Math.round((stat.passed * 1000.0) / stat.total) / 10.0;
+            String rateClass = rate >= 80.0 ? "rate-good" : rate >= 60.0 ? "rate-warn" : "rate-bad";
+            String escapedTag = escapeHtml(tag);
+
+            String passedBadge = stat.passed > 0
+                    ? "<span class=\"status-badge status-passed\">" + stat.passed + " passed</span>"
+                    : "<span style=\"color:var(--text-secondary);\">0</span>";
+            String failedBadge = stat.failed > 0
+                    ? "<span class=\"status-badge status-failed\">" + stat.failed + " failed</span>"
+                    : "<span style=\"color:var(--text-secondary);\">0</span>";
+            String skippedBadge = stat.skipped > 0
+                    ? "<span class=\"status-badge status-skipped\">" + stat.skipped + " skipped</span>"
+                    : "<span style=\"color:var(--text-secondary);\">0</span>";
+
+            sb.append("          <tr>\n")
+              .append("            <td>\n")
+              .append("              <span class=\"tag-chip\" onclick=\"filterByTag('")
+              .append(escapedTag)
+              .append("', event)\" title=\"Filter by tag: ")
+              .append(escapedTag)
+              .append("\">")
+              .append(escapedTag)
+              .append("</span>\n")
+              .append("            </td>\n")
+              .append("            <td><strong>").append(stat.total).append("</strong></td>\n")
+              .append("            <td>").append(passedBadge).append("</td>\n")
+              .append("            <td>").append(failedBadge).append("</td>\n")
+              .append("            <td>").append(skippedBadge).append("</td>\n")
+              .append("            <td><span class=\"tag-rate ").append(rateClass).append("\">")
+              .append(String.format(java.util.Locale.US, "%.1f%%", rate))
+              .append("</span></td>\n")
+              .append("          </tr>\n");
+        }
+
+        sb.append("        </tbody>\n")
+          .append("      </table>\n")
+          .append("    </div>\n")
+          .append("  </div>\n")
+          .append("</div>\n");
+
         return sb.toString();
     }
 

@@ -95,6 +95,10 @@ public class SeleniumBootExtension
         ExecutionMetrics.markStart(testId);
         ExecutionMetrics.recordTestClass(testId, context.getRequiredTestClass().getSimpleName());
         ExecutionMetrics.recordDescription(testId, context.getDisplayName());
+        java.util.Set<String> tags = context.getTags();
+        if (tags != null && !tags.isEmpty()) {
+            ExecutionMetrics.recordTags(testId, tags);
+        }
 
         // Quarantine check — abort before any resource is allocated
         checkQuarantine(context);

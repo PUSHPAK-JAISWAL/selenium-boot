@@ -75,6 +75,10 @@ public class CucumberHooks {
         ExecutionMetrics.markStart(testId);
         ExecutionMetrics.recordTestClass(testId, featureTitle(scenario.getUri()));
         ExecutionMetrics.recordDescription(testId, scenario.getName());
+        java.util.Collection<String> scenarioTags = scenario.getSourceTagNames();
+        if (scenarioTags != null && !scenarioTags.isEmpty()) {
+            ExecutionMetrics.recordTags(testId, scenarioTags);
+        }
 
         // 6. Create WebDriver (acquires session semaphore slot)
         DriverManager.createDriver();

@@ -320,6 +320,46 @@
 
         .footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-secondary); }
 
+        /* ── Tag Chips & Tag Table ── */
+        .tag-chips-wrap { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+        .tag-chip {
+            display: inline-flex; align-items: center;
+            background: var(--surface2); color: var(--primary);
+            border: 1px solid var(--border); border-radius: 12px;
+            padding: 1px 8px; font-size: 11px; font-weight: 500;
+            cursor: pointer; transition: all .15s ease;
+            font-family: 'Roboto', sans-serif;
+            user-select: none; -webkit-user-select: none;
+        }
+        .tag-chip:hover {
+            background: var(--primary); color: #fff; border-color: var(--primary);
+        }
+        .active-tag-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--primary-light); color: var(--primary);
+            border: 1px solid var(--primary); border-radius: 14px;
+            padding: 2px 10px; font-size: 12px; font-weight: 600;
+        }
+        .tag-clear-btn {
+            background: none; border: none; color: inherit;
+            font-size: 14px; line-height: 1; cursor: pointer;
+            padding: 0; font-weight: 700; opacity: .7;
+        }
+        .tag-clear-btn:hover { opacity: 1; }
+        .tag-summary-table { width: 100%; border-collapse: collapse; }
+        .tag-summary-table th {
+            background: transparent; color: var(--text-secondary);
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: .5px; padding: 8px 12px; border-bottom: 2px solid var(--border);
+            text-align: left;
+        }
+        .tag-summary-table td {
+            padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        .tag-summary-table tr:hover { background: var(--hover); }
+        .tag-rate { font-weight: 700; font-size: 13px; }
+
         /* ── Responsive ── */
         @media (max-width: 768px) {
             .layout { flex-direction: column; }
@@ -461,6 +501,8 @@
                 <div class="card-body">{{SLOWEST_TESTS}}</div>
             </div>
 
+            {{TAG_RESULTS}}
+
             <!-- Flakiness Radar -->
             {{FLAKINESS_SECTION}}
 
@@ -480,9 +522,13 @@
                     <button type="button" class="filter-btn" onclick="setFilter('FAILED', this)">Failed</button>
                     <button type="button" class="filter-btn" onclick="setFilter('SKIPPED', this)">Skipped</button>
                     <button type="button" class="filter-btn" onclick="setFilter('FLAKY', this)">Flaky</button>
+                    <span id="activeTagPill" class="active-tag-pill" style="display:none;">
+                        <span id="activeTagName"></span>
+                        <button type="button" class="tag-clear-btn" onclick="clearTagFilter()" title="Clear tag filter">&times;</button>
+                    </span>
                     <div class="search-wrap">
                         <span class="search-icon">&#128269;</span>
-                        <input type="text" id="searchInput" placeholder="Search by test or class..." oninput="applySearch()">
+                        <input type="text" id="searchInput" placeholder="Search by test, class, or tag..." oninput="applySearch()">
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -635,6 +681,31 @@ function toggleDetail(idx) {
     if (icon) icon.classList.toggle('open', !isOpen);
 }
 
+// ── Tag filtering ──
+let activeTagFilter = '';
+function filterByTag(tagName, event) {
+    if (event) event.stopPropagation();
+    activeTagFilter = (tagName || '').toLowerCase().trim();
+    showTab('tests', document.querySelector('.nav-item[onclick*=\'tests\']'));
+    const pill = document.getElementById('activeTagPill');
+    const nameSpan = document.getElementById('activeTagName');
+    if (pill && nameSpan) {
+        if (activeTagFilter) {
+            nameSpan.textContent = 'Tag: ' + tagName;
+            pill.style.display = 'inline-flex';
+        } else {
+            pill.style.display = 'none';
+        }
+    }
+    applySearch();
+}
+function clearTagFilter() {
+    activeTagFilter = '';
+    const pill = document.getElementById('activeTagPill');
+    if (pill) pill.style.display = 'none';
+    applySearch();
+}
+
 // ── Filter + search (Test Cases tab) ──
 let activeFilter = 'ALL';
 function setFilter(status, btn) {
@@ -651,12 +722,17 @@ function applySearch() {
         const rowStatus = row.getAttribute('data-status') || '';
         const rowTest   = row.getAttribute('data-test')   || '';
         const groupId   = row.getAttribute('data-group')  || '';
+        const rowTags   = (row.getAttribute('data-tags')  || '').split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
         const hasRetry  = row.querySelector('.retry-badge') !== null;
         const matchFilter = activeFilter === 'ALL'
             || activeFilter === rowStatus
             || (activeFilter === 'FLAKY' && hasRetry);
-        const matchSearch = !q || rowTest.includes(q) || groupId.toLowerCase().includes(q);
-        const show = matchFilter && matchSearch;
+        const matchTag = !activeTagFilter || rowTags.includes(activeTagFilter);
+        const matchSearch = !q
+            || rowTest.includes(q)
+            || groupId.toLowerCase().includes(q)
+            || rowTags.some(t => t.includes(q));
+        const show = matchFilter && matchTag && matchSearch;
         row.style.display = show ? '' : 'none';
         if (show) visibleGroups.add(groupId);
         const next = row.nextElementSibling;

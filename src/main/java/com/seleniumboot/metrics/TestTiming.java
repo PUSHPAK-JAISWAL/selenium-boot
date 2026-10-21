@@ -145,4 +145,30 @@ public class TestTiming {
     public java.util.List<com.seleniumboot.steps.StepRecord> getSteps() {
         return java.util.Collections.unmodifiableList(steps);
     }
+
+    private final java.util.List<String> tags =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public void setTags(java.util.Collection<String> values) {
+        tags.clear();
+        if (values != null) {
+            java.util.LinkedHashSet<String> deduplicated = new java.util.LinkedHashSet<>();
+            for (String v : values) {
+                if (v != null && !v.isBlank()) {
+                    String normalized = v.trim();
+                    if (normalized.startsWith("@")) {
+                        normalized = normalized.substring(1).trim();
+                    }
+                    if (!normalized.isEmpty()) {
+                        deduplicated.add(normalized);
+                    }
+                }
+            }
+            tags.addAll(deduplicated);
+        }
+    }
+
+    public java.util.List<String> getTags() {
+        return java.util.Collections.unmodifiableList(tags);
+    }
 }

@@ -128,6 +128,13 @@ public final class ExecutionMetrics {
         if (pageTitle != null) timing.setPageTitle(pageTitle);
     }
 
+    public static void recordTags(String testId, java.util.Collection<String> tags) {
+        if (testId == null || tags == null || tags.isEmpty()) return;
+        TIMINGS.computeIfAbsent(testId,
+                id -> new TestTiming(id, Thread.currentThread().getName()))
+               .setTags(tags);
+    }
+
     public static void recordConsoleErrors(String testId, List<String> errors) {
         if (testId == null || errors == null || errors.isEmpty()) return;
         TIMINGS.computeIfAbsent(testId,
@@ -409,6 +416,7 @@ public final class ExecutionMetrics {
             testEntry.put("testClassName", timing.getTestClassName() != null ? timing.getTestClassName() : "");
             testEntry.put("thread",        timing.getThreadName());
             testEntry.put("status",        timing.getStatus() != null ? timing.getStatus() : "UNKNOWN");
+            testEntry.put("tags",          timing.getTags());
             testEntry.put("retryCount",    timing.getRetryCount());
             com.seleniumboot.flakiness.TestStatus testStatus = testStatuses.get(timing.getTestId());
             if (testStatus != null) {
