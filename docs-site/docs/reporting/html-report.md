@@ -32,6 +32,7 @@ High-level summary of the run:
 - **Total / Passed / Failed / Skipped** counts
 - **Duration** — total wall-clock time
 - **Pass Rate** — percentage of passing tests, colour-coded (green / orange / red)
+- **Results by Tag** — breakdown of tests, passed, failed, skipped and pass rate per tag (TestNG groups, Cucumber tags, JUnit 5 `@Tag`), with click-to-filter
 - **Retry Summary** — retried, recovered, still-failing counts (shown only when retries occurred)
 - **Slowest 5 Tests** — ranked by total duration
 - **Driver Startup** percentile chart
@@ -43,7 +44,7 @@ Full table of all tests with:
 | Column | Description |
 |---|---|
 | Class | Simple class name |
-| Test | Test method name |
+| Test | Test method name and tag chips |
 | Status | PASSED / FAILED / SKIPPED badge |
 | Duration | ms |
 | Retries | Badge showing retry count (hidden when 0) |
@@ -56,6 +57,21 @@ Click any row to expand the **detail panel**:
 ### Failures tab
 
 Same detail panels as Test Cases tab, but only for failed tests. Detail panels are pre-expanded so you can immediately see what went wrong without clicking.
+
+---
+
+## Results by tag
+
+Selenium Boot automatically captures test tags across runners with zero configuration and zero runtime overhead:
+- **TestNG**: groups defined on `@Test(groups = {"smoke", "regression"})`
+- **Cucumber**: scenario tags defined in `.feature` files (e.g. `@smoke`, `@checkout` — leading `@` is stripped for consistency)
+- **JUnit 5**: tags defined via `@Tag("smoke")`
+
+When any test has tags:
+1. The **Dashboard tab** displays a **Results by Tag** card listing total tests, passed, failed, skipped, and a visual pass-rate progress bar for each tag.
+2. Clicking any tag in the "Results by Tag" table or clicking a tag chip on a test case row navigates directly to the **Test Cases** table, sets an active tag filter pill, and filters the table to matching tests.
+3. Tags are exported under the `tags` array for each test in `target/selenium-boot-metrics.json` and as `tag` labels in Allure 2 results.
+4. When no tests have tags in a run, the "Results by Tag" card is cleanly omitted.
 
 ---
 
