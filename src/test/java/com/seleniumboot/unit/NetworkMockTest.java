@@ -2,6 +2,7 @@ package com.seleniumboot.unit;
 
 import com.seleniumboot.driver.DriverManager;
 import com.seleniumboot.network.NetworkMock;
+import com.seleniumboot.network.NetworkMockTestSupport;
 import com.seleniumboot.network.StubBuilder;
 import org.mockito.ArgumentCaptor;
 import org.openqa.selenium.WebDriver;
@@ -42,13 +43,13 @@ public class NetworkMockTest {
     @BeforeMethod
     public void setUp() {
         NetworkMock.cleanup();
-        NetworkMock.resetBiDiFactory();
+        NetworkMockTestSupport.resetBiDiFactory();
     }
 
     @AfterMethod
     public void tearDown() {
         NetworkMock.cleanup();
-        NetworkMock.resetBiDiFactory();
+        NetworkMockTestSupport.resetBiDiFactory();
         try {
             DriverManager.popSessionOverride();
         } catch (Exception ignored) {
@@ -188,13 +189,13 @@ public class NetworkMockTest {
         Network mockNetwork = mock(Network.class);
         when(mockNetwork.addIntercept(any(AddInterceptParameters.class))).thenReturn("intercept-bidi-1");
 
-        NetworkMock.setBiDiFactory(d -> mockNetwork);
+        NetworkMockTestSupport.setBiDiFactory(d -> mockNetwork);
 
         NetworkMock mock = NetworkMock.get();
         mock.stub("**/api/users").returnJson("{\"users\":[{\"id\":1}]}");
 
-        assertTrue(mock.isBiDiActive(), "BiDi should be active when driver implements HasBiDi");
-        assertTrue(mock.isAttached(), "NetworkMock should be attached");
+        assertTrue(NetworkMockTestSupport.isBiDiActive(mock), "BiDi should be active when driver implements HasBiDi");
+        assertTrue(NetworkMockTestSupport.isAttached(mock), "NetworkMock should be attached");
         verify(mockNetwork).addIntercept(any(AddInterceptParameters.class));
 
         ArgumentCaptor<Consumer<BeforeRequestSent>> captor = ArgumentCaptor.forClass(Consumer.class);
@@ -235,7 +236,7 @@ public class NetworkMockTest {
 
         Network mockNetwork = mock(Network.class);
         when(mockNetwork.addIntercept(any(AddInterceptParameters.class))).thenReturn("intercept-bidi-1");
-        NetworkMock.setBiDiFactory(d -> mockNetwork);
+        NetworkMockTestSupport.setBiDiFactory(d -> mockNetwork);
 
         NetworkMock mock = NetworkMock.get();
         mock.stub("**/api/users").returnJson("[]");
@@ -269,7 +270,7 @@ public class NetworkMockTest {
 
         Network mockNetwork = mock(Network.class);
         when(mockNetwork.addIntercept(any(AddInterceptParameters.class))).thenReturn("intercept-bidi-1");
-        NetworkMock.setBiDiFactory(d -> mockNetwork);
+        NetworkMockTestSupport.setBiDiFactory(d -> mockNetwork);
 
         NetworkMock mock = NetworkMock.get();
         mock.stub("**/api/users").returnJson("[]");
@@ -295,7 +296,7 @@ public class NetworkMockTest {
 
         Network mockNetwork = mock(Network.class);
         when(mockNetwork.addIntercept(any(AddInterceptParameters.class))).thenReturn("intercept-bidi-1");
-        NetworkMock.setBiDiFactory(d -> mockNetwork);
+        NetworkMockTestSupport.setBiDiFactory(d -> mockNetwork);
 
         NetworkMock mock = NetworkMock.get();
         mock.stub("**/slow").delay(40).returnStatus(200);
@@ -326,7 +327,7 @@ public class NetworkMockTest {
 
         Network mockNetwork = mock(Network.class);
         when(mockNetwork.addIntercept(any(AddInterceptParameters.class))).thenReturn("intercept-bidi-1");
-        NetworkMock.setBiDiFactory(d -> mockNetwork);
+        NetworkMockTestSupport.setBiDiFactory(d -> mockNetwork);
 
         NetworkMock mock = NetworkMock.get();
         mock.stub("**/api/users").returnJson("[]");
@@ -335,9 +336,9 @@ public class NetworkMockTest {
 
         verify(mockNetwork).removeIntercept("intercept-bidi-1");
         verify(mockNetwork).close();
-        assertFalse(mock.isBiDiActive());
-        assertFalse(mock.isAttached());
-        assertTrue(mock.getStubs().isEmpty());
+        assertFalse(NetworkMockTestSupport.isBiDiActive(mock));
+        assertFalse(NetworkMockTestSupport.isAttached(mock));
+        assertTrue(NetworkMockTestSupport.getStubs(mock).isEmpty());
     }
 
     // ------------------------------------------------------------------
@@ -353,16 +354,16 @@ public class NetworkMockTest {
         when(chromium.getDevTools()).thenReturn(devTools);
         DriverManager.pushSessionOverride(chromium);
 
-        NetworkMock.setBiDiFactory(d -> {
+        NetworkMockTestSupport.setBiDiFactory(d -> {
             throw new BiDiException("WebSocket connection rejected");
         });
 
         NetworkMock mock = NetworkMock.get();
         mock.stub("**/api/checkout").returnStatus(500);
 
-        assertFalse(mock.isBiDiActive(), "BiDi should be inactive due to failure");
-        assertTrue(mock.isCdpActive(), "CDP should be active after BiDi fallback");
-        assertTrue(mock.isAttached(), "NetworkMock should be attached");
+        assertFalse(NetworkMockTestSupport.isBiDiActive(mock), "BiDi should be inactive due to failure");
+        assertTrue(NetworkMockTestSupport.isCdpActive(mock), "CDP should be active after BiDi fallback");
+        assertTrue(NetworkMockTestSupport.isAttached(mock), "NetworkMock should be attached");
 
         verify(devTools).createSession();
         verify(devTools).send(any(Command.class));
@@ -383,8 +384,8 @@ public class NetworkMockTest {
         verify(devTools, atLeastOnce()).send(any(Command.class));
 
         mock.clear();
-        assertFalse(mock.isCdpActive());
-        assertFalse(mock.isAttached());
+        assertFalse(NetworkMockTestSupport.isCdpActive(mock));
+        assertFalse(NetworkMockTestSupport.isAttached(mock));
     }
 
     @Test
@@ -397,9 +398,9 @@ public class NetworkMockTest {
         NetworkMock mock = NetworkMock.get();
         mock.stub("**/api/products").returnJson("[]");
 
-        assertFalse(mock.isBiDiActive());
-        assertTrue(mock.isCdpActive());
-        assertTrue(mock.isAttached());
+        assertFalse(NetworkMockTestSupport.isBiDiActive(mock));
+        assertTrue(NetworkMockTestSupport.isCdpActive(mock));
+        assertTrue(NetworkMockTestSupport.isAttached(mock));
         verify(devTools).createSession();
     }
 
@@ -411,13 +412,13 @@ public class NetworkMockTest {
         NetworkMock mock = NetworkMock.get();
         mock.stub("**/api/users").returnJson("[]");
 
-        assertFalse(mock.isBiDiActive());
-        assertFalse(mock.isCdpActive());
-        assertTrue(mock.isAttached());
+        assertFalse(NetworkMockTestSupport.isBiDiActive(mock));
+        assertFalse(NetworkMockTestSupport.isCdpActive(mock));
+        assertTrue(NetworkMockTestSupport.isAttached(mock));
 
         // Clearing should complete without exceptions
         mock.clear();
-        assertFalse(mock.isAttached());
+        assertFalse(NetworkMockTestSupport.isAttached(mock));
     }
 
     @Test
@@ -426,12 +427,12 @@ public class NetworkMockTest {
         NetworkMock mock = NetworkMock.get();
         mock.stub("**/api/users").returnJson("[]");
 
-        assertTrue(mock.isAttached());
-        assertFalse(mock.isBiDiActive());
-        assertFalse(mock.isCdpActive());
+        assertTrue(NetworkMockTestSupport.isAttached(mock));
+        assertFalse(NetworkMockTestSupport.isBiDiActive(mock));
+        assertFalse(NetworkMockTestSupport.isCdpActive(mock));
 
         mock.clear();
-        assertFalse(mock.isAttached());
+        assertFalse(NetworkMockTestSupport.isAttached(mock));
     }
 
     @Test
@@ -441,30 +442,30 @@ public class NetworkMockTest {
         DriverManager.pushSessionOverride(firefoxDriver);
         Network mockBidi = mock(Network.class);
         when(mockBidi.addIntercept(any())).thenReturn("bidi-fx-1");
-        NetworkMock.setBiDiFactory(d -> mockBidi);
+        NetworkMockTestSupport.setBiDiFactory(d -> mockBidi);
 
         NetworkMock fxMock = NetworkMock.get();
         fxMock.stub("**/api/profile").returnJson("{\"username\":\"tester\"}");
 
-        assertTrue(fxMock.isBiDiActive(), "Firefox should activate BiDi interception");
+        assertTrue(NetworkMockTestSupport.isBiDiActive(fxMock), "Firefox should activate BiDi interception");
         fxMock.clear();
         DriverManager.popSessionOverride();
         NetworkMock.cleanup();
-        NetworkMock.resetBiDiFactory();
+        NetworkMockTestSupport.resetBiDiFactory();
 
         // 2. Run the exact same stub logic on Chrome (CDP fallback when BiDi fails or is unconfigured)
         ChromiumDriver chromeDriver = mock(ChromiumDriver.class);
         DevTools chromeDevTools = mock(DevTools.class);
         when(chromeDriver.getDevTools()).thenReturn(chromeDevTools);
         DriverManager.pushSessionOverride(chromeDriver);
-        NetworkMock.setBiDiFactory(d -> {
+        NetworkMockTestSupport.setBiDiFactory(d -> {
             throw new BiDiException("WebSocket connection not enabled on Chrome session");
         });
 
         NetworkMock chromeMock = NetworkMock.get();
         chromeMock.stub("**/api/profile").returnJson("{\"username\":\"tester\"}");
 
-        assertTrue(chromeMock.isCdpActive(), "Chrome should activate CDP interception when BiDi is absent");
+        assertTrue(NetworkMockTestSupport.isCdpActive(chromeMock), "Chrome should activate CDP interception when BiDi is absent");
         chromeMock.clear();
         DriverManager.popSessionOverride();
     }
@@ -475,7 +476,7 @@ public class NetworkMockTest {
         DriverManager.pushSessionOverride(mockDriver);
 
         Network mockNetwork = mock(Network.class);
-        NetworkMock.setBiDiFactory(d -> mockNetwork);
+        NetworkMockTestSupport.setBiDiFactory(d -> mockNetwork);
 
         NetworkMock first = NetworkMock.get();
         first.stub("**/api/users").returnJson("[]");

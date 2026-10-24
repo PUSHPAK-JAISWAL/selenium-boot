@@ -64,7 +64,7 @@ public final class NetworkMock {
             ThreadLocal.withInitial(NetworkMock::new);
 
     @FunctionalInterface
-    public interface BiDiNetworkFactory {
+    interface BiDiNetworkFactory {
         Network create(WebDriver driver);
     }
 
@@ -272,7 +272,7 @@ public final class NetworkMock {
 
             bidiNetwork.provideResponse(params);
         } catch (Exception e) {
-            LOG.fine("[Selenium Boot] Failed to process BiDi intercepted request: " + e.getMessage());
+            LOG.warning("[Selenium Boot] Failed to process BiDi intercepted request for " + url + ": " + e.getMessage());
         }
     }
 
@@ -280,72 +280,76 @@ public final class NetworkMock {
         String    url       = event.getRequest().getUrl();
         RequestId requestId = event.getRequestId();
 
-        StubBuilder match = findMatch(url);
+        try {
+            StubBuilder match = findMatch(url);
 
-        if (match == null) {
-            devTools.send(Fetch.continueRequest(
+            if (match == null) {
+                devTools.send(Fetch.continueRequest(
+                        requestId,
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty()
+                ));
+                return;
+            }
+
+            if (match.delayMs > 0) {
+                try {
+                    Thread.sleep(match.delayMs);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            String body = match.responseBody != null ? match.responseBody : "";
+            String body64 = Base64.getEncoder().encodeToString(
+                    body.getBytes(StandardCharsets.UTF_8));
+
+            String contentType = match.contentType != null ? match.contentType : "application/json";
+            List<HeaderEntry> headers = List.of(
+                    new HeaderEntry("content-type", contentType)
+            );
+
+            devTools.send(Fetch.fulfillRequest(
                     requestId,
+                    match.statusCode,
+                    Optional.of(headers),
                     Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
+                    Optional.of(body64),
                     Optional.empty()
             ));
-            return;
+        } catch (Exception e) {
+            LOG.warning("[Selenium Boot] Failed to process CDP intercepted request for " + url + ": " + e.getMessage());
         }
-
-        if (match.delayMs > 0) {
-            try {
-                Thread.sleep(match.delayMs);
-            } catch (InterruptedException ignored) {
-                Thread.currentThread().interrupt();
-            }
-        }
-
-        String body = match.responseBody != null ? match.responseBody : "";
-        String body64 = Base64.getEncoder().encodeToString(
-                body.getBytes(StandardCharsets.UTF_8));
-
-        String contentType = match.contentType != null ? match.contentType : "application/json";
-        List<HeaderEntry> headers = List.of(
-                new HeaderEntry("content-type", contentType)
-        );
-
-        devTools.send(Fetch.fulfillRequest(
-                requestId,
-                match.statusCode,
-                Optional.of(headers),
-                Optional.empty(),
-                Optional.of(body64),
-                Optional.empty()
-        ));
     }
 
     // ------------------------------------------------------------------
-    // Testing / Inspection helpers
+    // Testing / Inspection helpers (package-private for test support)
     // ------------------------------------------------------------------
 
-    public static void setBiDiFactory(BiDiNetworkFactory factory) {
+    static void setBiDiFactory(BiDiNetworkFactory factory) {
         bidiFactory = factory;
     }
 
-    public static void resetBiDiFactory() {
+    static void resetBiDiFactory() {
         bidiFactory = Network::new;
     }
 
-    public boolean isAttached() {
+    boolean isAttached() {
         return attached;
     }
 
-    public boolean isBiDiActive() {
+    boolean isBiDiActive() {
         return bidiNetwork != null;
     }
 
-    public boolean isCdpActive() {
+    boolean isCdpActive() {
         return devTools != null;
     }
 
-    public List<StubBuilder> getStubs() {
+    List<StubBuilder> getStubs() {
         return Collections.unmodifiableList(stubs);
     }
 
