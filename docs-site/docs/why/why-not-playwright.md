@@ -56,4 +56,6 @@ Both are legitimate. Selenium Boot exists so that "we're a Selenium shop" no lon
 
 - [Coming from Playwright](/docs/migration/coming-from-playwright) — the full bridge page
 - [Accessibility-First Locators](/docs/guides/semantic-locators) — the `getByRole`/`getByLabel` family
+- [Why accessibility-first locators?](/docs/why/why-accessibility-first-locators) — how semantic locators survive markup changes
+- [Why WaitEngine?](/docs/why/why-wait-engine) — centralized auto-waiting vs scattered WebDriverWait
 - [Why Selenium Boot?](/docs/why/why-selenium-boot) — the overall philosophy

@@ -58,5 +58,7 @@ Because it *is* Selenium, adoption is incremental — you can point a single tes
 ## Next steps
 
 - [Migrate from Selenium + TestNG](/docs/migration/from-selenium-testng) — the side-by-side "delete the plumbing" guide
+- [Why accessibility-first locators?](/docs/why/why-accessibility-first-locators) — how semantic locators survive markup changes
+- [Why WaitEngine?](/docs/why/why-wait-engine) — centralized auto-waiting vs scattered WebDriverWait
 - [Why Selenium Boot?](/docs/why/why-selenium-boot) — the overall philosophy
 - [Getting Started](/docs/getting-started) — first test in 5 minutes
