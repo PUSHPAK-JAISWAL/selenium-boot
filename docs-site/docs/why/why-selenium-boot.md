@@ -47,10 +47,12 @@ Outcomes first — with the API that delivers them:
 - **Teams already invested in Selenium** who want Playwright-style ergonomics without leaving the Selenium / Java / TestNG stack, their team's skills, or Selenium Grid.
 - **Teams maintaining a home-grown framework** — a `BaseTest`, a `DriverFactory`, a pile of wait utilities — who'd rather delete that plumbing than keep debugging it.
 
-The two "why" questions those teams actually ask each have their own page:
+The "why" questions those teams actually ask each have their own page:
 
 - [Why not plain Selenium?](/docs/why/why-not-plain-selenium) — what the boilerplate really costs
 - [Why not Playwright?](/docs/why/why-not-playwright) — an honest comparison (we don't claim to replace it)
+- [Why accessibility-first locators?](/docs/why/why-accessibility-first-locators) — surviving markup and styling changes
+- [Why WaitEngine?](/docs/why/why-wait-engine) — centralized auto-waiting vs scattered WebDriverWait
 
 ---
 
