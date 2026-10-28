@@ -9,6 +9,8 @@ const sidebars = {
         'why/why-selenium-boot',
         'why/why-not-plain-selenium',
         'why/why-not-playwright',
+        'why/why-accessibility-first-locators',
+        'why/why-wait-engine',
       ],
     },
     'getting-started',
