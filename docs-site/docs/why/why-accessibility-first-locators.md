@@ -106,9 +106,9 @@ Accessibility-first locators do not hide `WebDriver` behind a restrictive propri
 1. **Transparent Selenium By**: Every semantic locator can produce a standard Selenium `By` instance using `.toBy()`:
    ```java
    By buttonBy = Locator.byRole(Role.BUTTON).withName("Submit").toBy();
-   WebElement rawElement = driver.findElement(buttonBy);
+   WebElement rawElement = getDriver().findElement(buttonBy); // or driver.findElement(...) in BasePage
    ```
-2. **Mix and match**: Use `getByRole` for UI actions and drop down to `driver.findElement(By.id("canvas"))` whenever you need low-level WebDriver control.
+2. **Mix and match**: Use `getByRole` for UI actions and drop down to `getDriver().findElement(By.id("canvas"))` whenever you need low-level WebDriver control.
 3. **Chainable auto-waiting**: Locators return `Locator` objects that poll up to `timeouts.explicit` and automatically re-resolve stale DOM elements, eliminating `StaleElementReferenceException` without extra code.
 
 ---
@@ -132,3 +132,4 @@ Accessibility-first locators do not hide `WebDriver` behind a restrictive propri
 - [Smart Locator](/docs/guides/smart-locator) — the chainable `$()` API
 - [Why WaitEngine?](/docs/why/why-wait-engine) — centralized waiting vs scattered `WebDriverWait`
 - [Why Selenium Boot?](/docs/why/why-selenium-boot) — the overall philosophy
+

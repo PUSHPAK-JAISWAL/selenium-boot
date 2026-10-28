@@ -143,3 +143,4 @@ $("#save-settings").click();
 - [Configuration Reference](/docs/configuration) — configuring `timeouts.explicit`, `timeouts.pageLoad`, and `timeouts.script`
 - [Why accessibility-first locators?](/docs/why/why-accessibility-first-locators) — how semantic locators survive markup changes
 - [Why Selenium Boot?](/docs/why/why-selenium-boot) — the overall philosophy
+
