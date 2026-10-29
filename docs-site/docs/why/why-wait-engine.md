@@ -109,7 +109,7 @@ $("#save-settings").click();
 | `WaitEngine.waitForUrlMatches(regex)` | Current browser URL matches a regex |
 | `WaitEngine.waitForStaleness(WebElement)` | Previous element detached / replaced after AJAX reload |
 | `WaitEngine.waitForPageLoad()` | `document.readyState === "complete"` |
-| `WaitEngine.waitForNetworkIdle()` | No network requests in flight (CDP / BiDi) |
+| `WaitEngine.waitForNetworkIdle()` | No network requests in flight (opt-in; CDP on Chrome/Edge, BiDi on Firefox) |
 
 ---
 
@@ -131,9 +131,11 @@ $("#save-settings").click();
 | Synchronization Method | Timeout Source | Re-checks Stale Elements | Network-Aware | Test Code Verbosity |
 |---|---|---|---|---|
 | `Thread.sleep()` | Hardcoded | No | No | Low, but adds dead wait time |
-| Scattered `WebDriverWait` | Hardcoded per call | Manual handling needed | No | High boilerplate |
-| `WaitEngine` | `selenium-boot.yml` | **Yes** | **Yes** (`waitForNetworkIdle`) | Low, static one-liners |
-| Auto-waiting `Locator` (`$()`, `getBy*`) | `selenium-boot.yml` | **Yes** | Integrated | **Zero explicit wait code** |
+| Scattered `WebDriverWait` | Hardcoded per call | Manual handling needed | No (requires custom CDP wiring) | High boilerplate |
+| `WaitEngine` | `selenium-boot.yml` | **Yes** | Opt-in (`waitForNetworkIdle` on CDP/BiDi) | Low, static one-liners |
+| Auto-waiting `Locator` (`$()`, `getBy*`) | `selenium-boot.yml` | **Yes** | DOM-readiness (not network-driven) | **Zero explicit wait code** |
+
+*(Note: Auto-waiting locators synchronize on DOM readiness — element presence, visibility, and clickability. When awaiting background AJAX/fetch requests without immediate UI mutations, opt into `WaitEngine.waitForNetworkIdle()`.)*
 
 ---
 
