@@ -65,7 +65,7 @@ Here is how different locator strategies hold up:
 | `By.xpath("//button[text()='Sign In']")` | Pass | **Fail** | **Fail** | `button` tag is gone |
 | `getByRole(Role.BUTTON).withName("Sign In")` | **Pass** | **Pass** | **Pass** | All 3 expose the accessible role `button` and name `"Sign In"` |
 
-`Role.BUTTON` targets both native HTML elements with implicit roles (`<button>`, `<input type="submit">`, `<summary>`) and any element with an explicit `role="button"`. The accessible name calculation follows standard W3C ARIA precedence (`aria-label` → `aria-labelledby` → `<label>` → text content → `value`).
+`Role.BUTTON` targets both native HTML elements with implicit roles (`<button>`, `<input type="submit">`, `<summary>`) and any element with an explicit `role="button"`. The accessible name calculation follows standard W3C ARIA precedence (`aria-label` → `aria-labelledby` → `<label>` → text content → `value`). For Sprint 3's `<input type="submit">`, `Role.BUTTON` matches the native input type, and the accessible name computation falls back to the `value` attribute (`"Sign In"`), keeping the locator passing across all three implementations.
 
 ---
 
@@ -118,11 +118,13 @@ Accessibility-first locators do not hide `WebDriver` behind a restrictive propri
 | Feature | CSS / XPath | Accessibility-First (`getBy*`) |
 |---|---|---|
 | Target | DOM structure / CSS classes | Accessibility tree (Role + Name) |
-| Survives CSS refactoring | No | **Yes** |
-| Survives tag change (`<button>` to `<a role="button">`) | No | **Yes** |
+| Resilience to CSS class renames | Low (coupled to utility/styling classes) | High (uncoupled from styling classes) |
+| Resilience to semantic tag refactors | Low (hardcoded tag names break) | High (matches implicit and explicit ARIA roles) |
 | Auto-waiting on action (`click()`, `type()`) | No | **Yes** |
 | Re-resolves stale DOM references | No | **Yes** |
 | Escape hatch to raw `By` | Native | `.toBy()` |
+
+*(Note: While accessibility-first locators decouple tests from styling classes and DOM nesting, they remain focused on the user contract — tests will naturally require updates if a redesign fundamentally removes or alters the accessible name or role.)*
 
 ---
 
