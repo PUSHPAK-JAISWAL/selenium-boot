@@ -1,5 +1,5 @@
 ---
-description: "Run Selenium tests on BrowserStack and Sauce Labs with zero code changes. Switch from local Chrome to cloud browsers by editing one config line."
+description: "Run Selenium tests on BrowserStack, Sauce Labs, and LambdaTest with zero code changes. Switch from local Chrome to cloud browsers by editing one config line."
 id: cloud-execution
 title: Cloud Execution
 sidebar_position: 12
@@ -7,10 +7,10 @@ sidebar_position: 12
 
 # Cloud Execution
 
-Selenium Boot supports running your test suite on **BrowserStack** and **Sauce Labs** with zero test-code changes. Switch from local Chrome to a cloud browser farm by changing one line in `selenium-boot.yml`.
+Selenium Boot supports running your test suite on **BrowserStack**, **Sauce Labs**, and **LambdaTest** with zero test-code changes. Switch from local Chrome to a cloud browser farm by changing one line in `selenium-boot.yml`.
 
 :::caution Requires Selenium Boot 3.2.1+
-Cloud execution (`execution.mode: browserstack` or `saucelabs`) requires **Selenium Boot 3.2.1 or later**. It does not work in any earlier release — config loading rejects any `execution.mode` other than `local` or `remote` at startup — regardless of what the examples on this page show.
+Cloud execution (`execution.mode: browserstack`, `saucelabs`, or `lambdatest`) requires **Selenium Boot 3.2.1 or later**.
 :::
 
 ---
@@ -25,6 +25,7 @@ All four execution modes share the same driver lifecycle — tests use `getDrive
 | `remote` | Your own Selenium Grid / Selenoid / Moon |
 | `browserstack` | BrowserStack Automate cloud |
 | `saucelabs` | Sauce Labs cloud |
+| `lambdatest` | LambdaTest cloud |
 
 ---
 
@@ -242,6 +243,64 @@ Ensure your BrowserStack / Sauce Labs plan allows the number of concurrent sessi
 
 ---
 
+## LambdaTest
+
+### Prerequisites
+
+1. Sign up at [lambdatest.com](https://www.lambdatest.com)
+2. Copy your LambdaTest username and access key from your account settings
+
+### Config
+
+```yaml title="selenium-boot.yml"
+execution:
+  mode: lambdatest
+  lambdatest:
+    username:      ${LT_USERNAME}
+    accessKey:     ${LT_ACCESS_KEY}
+    platform:      "Windows 11"
+    browser:       chrome
+    browserVersion: latest
+
+browser:
+  name: chrome
+
+timeouts:
+  explicit: 10
+  pageLoad: 30
+```
+
+The provider uses LambdaTest's W3C `LT:Options` capability and the
+`https://hub.lambdatest.com/wd/hub` hub URL. Keys under `capabilities` are
+merged into `LT:Options`, so they override the generated defaults:
+
+```yaml
+execution:
+  mode: lambdatest
+  lambdatest:
+    username:   ${LT_USERNAME}
+    accessKey:  ${LT_ACCESS_KEY}
+    platform:   "Windows 11"
+    browser:    chrome
+    browserVersion: latest
+    capabilities:
+      build: "v2.1.0"
+      video: true
+```
+
+Set environment variables before running:
+
+```bash
+export LT_USERNAME=your_username
+export LT_ACCESS_KEY=your_access_key
+mvn test
+```
+
+After each test, the HTML report includes a **☁ View Session** link to the
+LambdaTest session logs.
+
+---
+
 ## Switching between environments
 
 Use Maven profiles or environment variables to switch execution targets without changing any YAML file:
@@ -265,7 +324,7 @@ Keep separate YAML files per environment — each imports shared settings and on
 
 ```yaml title="selenium-boot.yml"
 execution:
-  mode: browserstack   # local | remote | browserstack | saucelabs
+  mode: browserstack   # local | remote | browserstack | saucelabs | lambdatest
 
   # ── BrowserStack ───────────────────────────────────────────────
   browserstack:
@@ -291,6 +350,16 @@ execution:
     browserVersion: latest
     capabilities:                   # raw sauce:options overrides
       recordVideo: true
+
+  # ── LambdaTest ─────────────────────────────────────────────────
+  lambdatest:
+    username:      ${LT_USERNAME}
+    accessKey:     ${LT_ACCESS_KEY}
+    platform:      "Windows 11"
+    browser:       chrome
+    browserVersion: latest
+    capabilities:                   # raw LT:Options overrides
+      video: true
 
 browser:
   name: chrome

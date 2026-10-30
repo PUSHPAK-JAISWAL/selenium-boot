@@ -43,7 +43,7 @@ A committed YAML file solves this cleanly:
 | Survives fresh clones | ✅ — it's in git |
 | No external services needed | ✅ — just a YAML file |
 | Auditable | ✅ — changes go through PRs |
-| Works with all execution modes | ✅ — local, remote, BrowserStack, Sauce Labs |
+| Works with all execution modes | ✅ — local, remote, BrowserStack, Sauce Labs, LambdaTest |
 | Works across team members | ✅ — everyone gets the same list |
 
 ---

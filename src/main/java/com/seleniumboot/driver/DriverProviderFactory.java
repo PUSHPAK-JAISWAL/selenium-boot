@@ -28,6 +28,10 @@ public final class DriverProviderFactory {
             return new SauceLabsProvider();
         }
 
+        if ("lambdatest".equalsIgnoreCase(executionMode)) {
+            return new LambdaTestProvider();
+        }
+
         // Custom providers registered via SPI or programmatically take precedence
         DriverProvider custom = DriverProviderRegistry.find(browser);
         if (custom != null) {

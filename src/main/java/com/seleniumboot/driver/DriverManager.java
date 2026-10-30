@@ -132,7 +132,7 @@ public final class DriverManager {
 
             DRIVER.set(driver);
 
-            // Capture cloud session URL for BrowserStack / Sauce Labs
+            // Capture cloud session URL for BrowserStack / Sauce Labs / LambdaTest
             try {
                 String mode = SeleniumBootContext.getConfig().getExecution().getMode();
                 if (driver instanceof org.openqa.selenium.remote.RemoteWebDriver rdw) {
@@ -141,6 +141,8 @@ public final class DriverManager {
                         CLOUD_SESSION_URL.set(BrowserStackProvider.SESSION_URL_PREFIX + sessionId);
                     } else if ("saucelabs".equalsIgnoreCase(mode)) {
                         CLOUD_SESSION_URL.set(SauceLabsProvider.SESSION_URL_PREFIX + sessionId);
+                    } else if ("lambdatest".equalsIgnoreCase(mode)) {
+                        CLOUD_SESSION_URL.set(LambdaTestProvider.SESSION_URL_PREFIX + sessionId);
                     }
                 }
             } catch (Exception ignored) {}

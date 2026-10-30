@@ -186,6 +186,17 @@ public class ConfigurationLoaderTest {
         ConfigurationLoader.load();
     }
 
+    @Test
+    public void load_lambdaTestMode_isAccepted() throws IOException {
+        Path file = Files.createTempFile("sb-lambdatest", ".yml");
+        Files.writeString(file, "execution:\n  mode: lambdatest\n");
+        System.setProperty("selenium.boot.config", file.toString());
+
+        SeleniumBootConfig config = ConfigurationLoader.load();
+
+        assertEquals(config.getExecution().getMode(), "lambdatest");
+    }
+
     @Test(expectedExceptions = IllegalStateException.class)
     public void load_negativeTimeoutStillRejected() throws IOException {
         Path file = Files.createTempFile("sb-negtimeout", ".yml");

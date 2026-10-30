@@ -62,7 +62,7 @@ browser:
 
 # ── Execution ───────────────────────────────────────────────────────────────
 execution:
-  mode: local               # local | remote | browserstack | saucelabs
+  mode: local               # local | remote | browserstack | saucelabs | lambdatest
   baseUrl: https://your-app.com
   gridUrl: http://localhost:4444   # only for remote mode
 

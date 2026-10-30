@@ -2,7 +2,10 @@ package com.seleniumboot.unit;
 
 import com.seleniumboot.config.SeleniumBootConfig;
 import com.seleniumboot.driver.BrowserStackProvider;
+import com.seleniumboot.driver.LambdaTestProvider;
 import com.seleniumboot.driver.SauceLabsProvider;
+import com.seleniumboot.internal.SeleniumBootContext;
+import org.mockito.MockedStatic;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -143,5 +146,99 @@ public class CloudProviderTest {
         assertEquals(cfg.getPlatformName(), "macOS 13");
         assertEquals(cfg.getBrowser(), "safari");
         assertEquals(cfg.getBrowserVersion(), "16.0");
+    }
+
+    // ── LambdaTest ───────────────────────────────────────────────────────────
+
+    @Test
+    public void lambdatest_hubUrl_isCorrect() {
+        assertEquals(LambdaTestProvider.HUB_URL,
+                "https://hub.lambdatest.com/wd/hub");
+    }
+
+    @Test
+    public void lambdatest_sessionUrlPrefix_isCorrect() {
+        assertEquals(LambdaTestProvider.SESSION_URL_PREFIX,
+                "https://automation.lambdatest.com/logs/?sessionID=");
+    }
+
+    @Test
+    public void lambdatest_sessionUrl_appendsSessionId() {
+        String url = LambdaTestProvider.SESSION_URL_PREFIX + "lt123";
+        assertEquals(url,
+                "https://automation.lambdatest.com/logs/?sessionID=lt123");
+    }
+
+    @Test
+    public void lambdatest_configDefaults() {
+        SeleniumBootConfig.Execution.LambdaTest cfg =
+                new SeleniumBootConfig.Execution.LambdaTest();
+        assertEquals(cfg.getPlatform(), "Windows 11");
+        assertEquals(cfg.getBrowser(), "chrome");
+        assertEquals(cfg.getBrowserVersion(), "latest");
+        assertNotNull(cfg.getCapabilities());
+        assertTrue(cfg.getCapabilities().isEmpty());
+    }
+
+    @Test
+    public void lambdatest_configSetters() {
+        SeleniumBootConfig.Execution.LambdaTest cfg =
+                new SeleniumBootConfig.Execution.LambdaTest();
+        cfg.setUsername("ltUser");
+        cfg.setAccessKey("ltKey");
+        cfg.setPlatform("macOS Ventura");
+        cfg.setBrowser("firefox");
+        cfg.setBrowserVersion("120");
+
+        assertEquals(cfg.getUsername(), "ltUser");
+        assertEquals(cfg.getAccessKey(), "ltKey");
+        assertEquals(cfg.getPlatform(), "macOS Ventura");
+        assertEquals(cfg.getBrowser(), "firefox");
+        assertEquals(cfg.getBrowserVersion(), "120");
+    }
+
+    @Test
+    public void lambdatest_missingUsername_failsClearly() {
+        SeleniumBootConfig config = new SeleniumBootConfig();
+        config.setExecution(new SeleniumBootConfig.Execution());
+        try (MockedStatic<SeleniumBootContext> context =
+                     org.mockito.Mockito.mockStatic(SeleniumBootContext.class)) {
+            context.when(SeleniumBootContext::getConfig).thenReturn(config);
+
+            IllegalStateException error;
+            try {
+                new LambdaTestProvider().createDriver();
+                fail("Expected missing username to be rejected");
+                return;
+            } catch (IllegalStateException e) {
+                error = e;
+            }
+
+            assertEquals(error.getMessage(),
+                    "[LambdaTest] execution.lambdatest.username is required");
+        }
+    }
+
+    @Test
+    public void lambdatest_missingAccessKey_failsClearly() {
+        SeleniumBootConfig config = new SeleniumBootConfig();
+        config.setExecution(new SeleniumBootConfig.Execution());
+        config.getExecution().getLambdatest().setUsername("ltUser");
+        try (MockedStatic<SeleniumBootContext> context =
+                     org.mockito.Mockito.mockStatic(SeleniumBootContext.class)) {
+            context.when(SeleniumBootContext::getConfig).thenReturn(config);
+
+            IllegalStateException error;
+            try {
+                new LambdaTestProvider().createDriver();
+                fail("Expected missing access key to be rejected");
+                return;
+            } catch (IllegalStateException e) {
+                error = e;
+            }
+
+            assertEquals(error.getMessage(),
+                    "[LambdaTest] execution.lambdatest.accessKey is required");
+        }
     }
 }

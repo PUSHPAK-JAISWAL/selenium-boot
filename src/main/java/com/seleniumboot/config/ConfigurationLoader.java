@@ -163,9 +163,14 @@ public final class ConfigurationLoader {
         }
 
         String mode = config.getExecution().getMode();
-        if (!"local".equalsIgnoreCase(mode) && !"remote".equalsIgnoreCase(mode)) {
+        if (!"local".equalsIgnoreCase(mode)
+                && !"remote".equalsIgnoreCase(mode)
+                && !"browserstack".equalsIgnoreCase(mode)
+                && !"saucelabs".equalsIgnoreCase(mode)
+                && !"lambdatest".equalsIgnoreCase(mode)) {
             throw new IllegalStateException(
-                    "execution.mode must be 'local' or 'remote', got: '" + mode + "'");
+                    "execution.mode must be 'local', 'remote', 'browserstack', "
+                            + "'saucelabs', or 'lambdatest', got: '" + mode + "'");
         }
 
         if (config.getTimeouts() == null

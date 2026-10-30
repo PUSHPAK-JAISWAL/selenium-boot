@@ -118,7 +118,7 @@ Outcomes first — the API that delivers each one is on the right so you can jum
 | **Verify what actually landed in the DB** | `db().assertRowExists()`, `db().query().assertValue()` — plain JDBC, no ORM |
 | **Assert on the email your app sent** | `mailbox().waitForEmail(to("user@test.com"))` — Mailhog, Mailtrap, Outlook, IMAP |
 | **Skip the browser for non-UI tests** | `@NoBrowser` — DB assertions, API checks, file operations, no WebDriver |
-| **Run on real cloud browsers unchanged** | `execution.mode: browserstack` / `saucelabs` — session URL in HTML report |
+| **Run on real cloud browsers unchanged** | `execution.mode: browserstack` / `saucelabs` / `lambdatest` — session URL in HTML report |
 | **Understand failures without digging** | AI failure analysis — Claude explains why a test failed and suggests a fix |
 | **Locators that repair themselves** | Self-healing fallback strategies when a locator fails |
 | **Know which tests will flake next** | Flakiness prediction — risk scores from run history, radar chart in report |
