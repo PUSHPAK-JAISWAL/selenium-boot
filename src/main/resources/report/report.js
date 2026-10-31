@@ -32,7 +32,7 @@ function toggleDark() {
 
 // ── Charts ──
 const executionData = JSON.parse('{{EXECUTION_PERCENTILES}}');
-const donutData     = {{DONUT_DATA}};
+const donutData     = JSON.parse('{{DONUT_DATA}}');
 const themeColors = getComputedStyle(document.documentElement);
 const color = name => themeColors.getPropertyValue(name).trim();
 const chartFontFamily = 'Roboto, "Segoe UI", Arial, sans-serif';
@@ -66,7 +66,7 @@ if (window.Chart) {
 }
 
 // ── Trend over runs ──
-const trendData = {{TREND_DATA}};
+const trendData = JSON.parse('{{TREND_DATA}}');
 if (window.Chart && trendData.length >= 2) {
     document.getElementById('trendRow').style.display = '';
     const labels = trendData.map(r => r.label);

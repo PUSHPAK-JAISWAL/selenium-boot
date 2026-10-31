@@ -1,5 +1,6 @@
 package com.seleniumboot.reporting;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seleniumboot.config.SeleniumBootConfig;
@@ -165,7 +166,7 @@ public class HtmlReportGeneratorTest {
                 java.nio.file.Files.createTempDirectory("sb-empty").toString());
         try {
             assertEquals(HtmlReportGenerator.buildTrendData(20), "[]");
-            assertTrue(html(1, 0).contains("const trendData = [];"));
+            assertTrue(html(1, 0).contains("const trendData = JSON.parse('[]');"));
         } finally {
             System.clearProperty("seleniumboot.history.dir");
         }
